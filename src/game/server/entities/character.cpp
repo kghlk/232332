@@ -836,131 +836,114 @@ void CCharacter::Tick()
 		Antibot()->OnHookAttach(m_pPlayer->GetCid(), false);
 	}
 
-// --- 0. 队友逻辑初始化 ---
 	if(m_Core.HookedPlayer() >= 0 && !youduiyou && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->youduiyou)
 		duiyou = m_Core.HookedPlayer();
 
+	// --- 0. 队友逻辑初始化 ---
 	if(duiyou >= 0 && duiyou != m_pPlayer->GetCid() && isstart)
 	{
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(duiyou);
 		if(pTargetChar)
 		{
-			pTargetChar->youduiyou = true;
-			youduiyou = true;
+			// 只有 ID 小的玩家负责逻辑计算，防止双重计算导致的位置冲突
+			if(m_pPlayer->GetCid() > duiyou) return;
 
+			pTargetChar->youduiyou = true;			youduiyou = true;
 			float TickSpeed = (float)Server()->TickSpeed();
 
-			// --- 1. 定位目标 Tile ---
+			// --- 1. 获取当前旋转球的位置和目标地砖 ---
+			// m_RotateMode == 0: 玩家是中心，队友是旋转球
+			// m_RotateMode == 1: 队友是中心，玩家是旋转球
 			vec2 CurrentRotatingPos = (m_RotateMode == 0) ? pTargetChar->m_Pos : m_Pos;
+			vec2 CenterPos = (m_RotateMode == 0) ? m_Pos : pTargetChar->m_Pos;
+			
 			vec2 box = vec2(32.0f, 32.0f);
 			vec2 TargetTilePos = Collision()->ctile(CurrentRotatingPos, box);
 			int TargetTileIndex = Collision()->GetPureMapIndex(TargetTilePos);
 
 			// --- 2. 状态判定 ---
-			bool IsColliding = (m_RotateMode == 0) ? Collision()->TestBox(pTargetChar->m_Core.m_Pos, box) : Collision()->TestBox(m_Core.m_Pos, box);
+			bool IsColliding = Collision()->TestBox(CurrentRotatingPos, box);
 			bool IsRealWall = Collision()->GetCollisionAt(TargetTilePos.x, TargetTilePos.y);
 
 			bool AlreadyUsed = false;
-			for(int usedIndex : m_UsedTiles)
-				if(usedIndex == TargetTileIndex)
-				{
-					AlreadyUsed = true;
-					break;
-				}
+			for(int index : m_UsedTiles) { if(index == TargetTileIndex) { AlreadyUsed = true; break; } }
 
-			// --- 3. 初始化状态 ---
-			if(m_DuiyouStartTick == -1)
+			// 初始化速度 (防止除零)
+			if(m_DuiyouStartTick <= 0.0f)
 			{
-				m_DuiyouStartTick = Server()->Tick();
-				m_AngleOffset = 0.0f;
 				m_FirstSwitch = true;
-
-				if(m_LastBPM <= 0)
-					m_LastBPM = 150.0f; // 默认起步 150 BPM
-				m_CurrentSpeed = pi / ((TickSpeed * 60.0f) / m_LastBPM);
+				if(m_LastBPM <= 0) m_LastBPM = 150.0f;
+				m_CurrentSpeed = (m_LastBPM * pi) / (60.0f * TickSpeed);
 			}
 
-			// --- 4. 核心切换与 Zone 变速逻辑 ---
+			// --- 3. 核心切换逻辑 ---
 			if(IsColliding && IsRealWall && !AlreadyUsed)
 			{
+				// A. 计算当前撞击点相对于旧中心点的物理角度 (0, 90, 180, 270)
+				vec2 ToTarget = TargetTilePos - CenterPos;
+				float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
+
 				if(m_FirstSwitch)
 				{
-					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
-					GameServer()->CreateMapSound(0, duiyou);
+					m_DuiyouStartTick = (float)Server()->Tick();
+					// 初始第一次，下一段的起点是【撞击点的对面】
+					m_AngleOffset = TargetPhysicalAngle + pi; 
 					m_FirstSwitch = false;
-				}
-
-				// A. 【变速核心】从 Zone 中读取实际 BPM 并更新转速
-				int BPMZoneHandle = Collision()->GetZoneHandle("bpm");
-				float ZoneValue = Collision()->GetZoneValueAt(BPMZoneHandle, TargetTilePos.x, TargetTilePos.y,
-					static_cast<double>(Server()->Tick() - m_DuiyouStartTick) / Server()->TickSpeed());
-
-				if(ZoneValue > 0 && ZoneValue != m_LastBPM)
-				{
-					m_LastBPM = ZoneValue/10;
-					// 重新计算角速度，这会直接改变球转圈的视觉快慢
-					m_CurrentSpeed = pi / ((TickSpeed * 60.0f) / m_LastBPM);
-				}
-
-				// B. 物理吸附准备
-				vec2 OldCenterPos = (m_RotateMode == 0) ? m_Pos : pTargetChar->m_Pos;
-
-				vec2 DeltaPos = m_RotateMode ? m_Pos - pTargetChar->m_Pos : pTargetChar->m_Pos - m_Pos;
-				float CurrentAngle = atan2(DeltaPos.y, DeltaPos.x) + pi;
-				float TargetAngle = round(CurrentAngle / (pi / 2)) * pi / 2;
-				float DeltaAngle = CurrentAngle - TargetAngle;
-				char aBroadcast[128];
-				str_format(aBroadcast, sizeof(aBroadcast), " %.2f", DeltaAngle);
-				GameServer()->SendBroadcast(aBroadcast, m_pPlayer->GetCid());
-				GameServer()->SendBroadcast(aBroadcast,duiyou);
-				// 交换旋转角色
-				if(m_RotateMode == 0)
-				{
-					pTargetChar->m_Pos = TargetTilePos;
-					pTargetChar->m_Core.m_Pos = TargetTilePos;
 				}
 				else
 				{
+					// B. 计算这一路转了多少度 (AngleSwung)
+					// 逻辑角度 = m_AngleOffset + (Time * Speed)
+					// 在撞击时刻，这个逻辑角度应该等于 TargetPhysicalAngle
+					float AngleSwung = TargetPhysicalAngle - m_AngleOffset;
+					
+					// 关键点：强制顺时针。如果 AngleSwung 是负数或过小，说明跨过了 0/360 度线
+					while (AngleSwung <= 0.05f) AngleSwung += 2.0f * pi; 
+
+					// C. 补偿时间轴，确保音乐对齐
+					m_DuiyouStartTick += (AngleSwung / m_CurrentSpeed);
+					
+					// D. 【核心修复】：下一段的起始角度
+					// 既然中心换到了 TargetTilePos，那么球（原中心）相对于新中心的位置
+					// 永远在撞击方向的反方向，即 + pi。
+					m_AngleOffset = TargetPhysicalAngle + pi; 
+				}
+
+				// --- 4. BPM 更新 ---
+				int BPMZoneHandle = Collision()->GetZoneHandle("bpm");
+				float ZoneValue = Collision()->GetZoneValueAt(BPMZoneHandle, TargetTilePos.x, TargetTilePos.y, 0);
+				if(ZoneValue > 0) 
+				{
+					m_LastBPM = ZoneValue / 10.0f; // 假设地图值是1500代表150BPM
+					m_CurrentSpeed = (m_LastBPM * pi) / (60.0f * TickSpeed);
+				}
+
+				// 交换位置：将旋转球吸附到地砖中心
+				if(m_RotateMode == 0) {
+					pTargetChar->m_Pos = TargetTilePos;
+					pTargetChar->m_Core.m_Pos = TargetTilePos;
+				} else {
 					m_Pos = TargetTilePos;
 					m_Core.m_Pos = TargetTilePos;
 				}
-				m_RotateMode = !m_RotateMode;
+
+				m_RotateMode = !m_RotateMode; // 切换中心
 				m_UsedTiles.push_back(TargetTileIndex);
-
-				// C. 【硬相位重置】确保变速后不丢拍
-				// 强制重置时间锚点，让 RelativeTick 从这一帧重新开始
-				m_DuiyouStartTick = Server()->Tick();
-
-				// 算出地砖相对于旋转中心的标准物理角度（0, 90, 180, 270）
-				vec2 RelativeVec = OldCenterPos - TargetTilePos;
-				float TargetPhysicalAngle = round(atan2(RelativeVec.y, RelativeVec.x) / (pi / 2.0f)) * (pi / 2.0f);
-
-				// 校准逻辑偏移：确保下一帧旋转从这个物理角度开始
-				if(DeltaAngle < -16 || DeltaAngle > 16)
-					m_AngleOffset = TargetPhysicalAngle - pi + DeltaAngle -16;
-				else
-					m_AngleOffset = TargetPhysicalAngle - pi;
+				if(m_UsedTiles.size() > 10) m_UsedTiles.erase(m_UsedTiles.begin());
+				
 				GameServer()->CreateSound(m_Pos, SOUND_HAMMER_HIT, TeamMask());
 			}
 
 			// --- 5. 应用旋转渲染 ---
-			float RelativeTick = (float)(Server()->Tick() - m_DuiyouStartTick);
+			float RelativeTick = (float)Server()->Tick() - m_DuiyouStartTick;
+			
+			// 【修正】：直接使用 m_AngleOffset，不要再额外加 pi
+			// 这样 Angle 在 RelativeTick 为 0 时，正好等于 TargetPhysicalAngle + pi
+			// 也就是球精准地出现在上一块地砖的位置。
+			float CurrentAngle = m_AngleOffset + (RelativeTick * m_CurrentSpeed);
 
-			// 角速度此时已经是根据 Zone 更新过的 m_CurrentSpeed
-			float CurrentLogicAngle = (RelativeTick * m_CurrentSpeed) + m_AngleOffset;
-			float Angle = CurrentLogicAngle + pi;
-
-			// --- 6. 死亡检测 ---
-			// 基础判定：球如果转了超过 2.1 拍（π 是半圈，即一拍）还没碰到下一块砖就判定死亡
-			if(RelativeTick * m_CurrentSpeed >= 2.1f * pi)
-			{
-				Die(m_pPlayer->GetCid(), WEAPON_WORLD);
-				return;
-			}
-
-			// 渲染球的位置 (半径 128 像素)
-			float Radius = 32.0f * 4;
-			vec2 Offset = vec2(cos(Angle) * Radius, sin(Angle) * Radius);
+			float Radius = 128.0f; // 4格距离 (32*4)
+			vec2 Offset = vec2(cos(CurrentAngle) * Radius, sin(CurrentAngle) * Radius);
 
 			if(m_RotateMode == 0)
 			{
