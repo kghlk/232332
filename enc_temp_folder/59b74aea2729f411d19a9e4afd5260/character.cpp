@@ -847,6 +847,8 @@ void CCharacter::Tick()
 	}
 	if(duiyou >= 0 && duiyou != m_pPlayer->GetCid() && isstart)
 	{
+	
+		
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(duiyou);
 		if(pTargetChar)
 		{
@@ -855,6 +857,7 @@ void CCharacter::Tick()
 			if(m_pPlayer->GetCid() > duiyou)
 				return;
 
+		
 			float TickSpeed = (float)Server()->TickSpeed();
 
 			// --- 1. 获取位置和地砖 ---
