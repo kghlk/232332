@@ -44,7 +44,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_LatestPrevPrevInput = m_LatestPrevInput = m_LatestInput = m_PrevInput = m_SavedInput = m_Input;
 
 	Partner = -1;
-	m_DuiyouStartTick= -1;
+	m_DuiyouStartTick = -1;
 	m_AutoBot = false;
 	m_LastTimeCp = -1;
 	m_LastTimeCpBroadcasted = -1;
@@ -847,7 +847,7 @@ void CCharacter::Tick()
 	// --- 0. 队友逻辑初始化 ---
 	if(m_Core.HookedPlayer() >= 0 && !HavePartner && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->HavePartner)
 		Partner = m_Core.HookedPlayer();
-	if (Partner >= 0)
+	if(Partner >= 0)
 	{
 		HavePartner = true;
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(Partner);
@@ -862,9 +862,8 @@ void CCharacter::Tick()
 		if(pTargetChar)
 		{
 			if(Server()->Tick() % 4 == 0)
-			GameServer()->CreateDeath(pTargetChar->m_Pos, pTargetChar->m_pPlayer->GetCid());
+				GameServer()->CreateDeath(pTargetChar->m_Pos, pTargetChar->m_pPlayer->GetCid());
 			pTargetChar->HavePartner = true;
-		
 
 			float TickSpeed = (float)Server()->TickSpeed();
 
@@ -876,6 +875,8 @@ void CCharacter::Tick()
 			vec2 TargetTilePos = Collision()->ctile(CurrentRotatingPos, box);
 			int TargetTileIndex = Collision()->GetPureMapIndex(TargetTilePos);
 
+			if(m_AutoBot)
+				box = vec2(1.0f, 1.0f);
 			// --- 2. 状态判定 ---
 			bool IsColliding = Collision()->TestBoxSize(CurrentRotatingPos, box);
 			bool IsRealWall = Collision()->GetCollisionAt(TargetTilePos.x, TargetTilePos.y);
@@ -908,23 +909,16 @@ void CCharacter::Tick()
 
 			bool AnyJump = (MyJump || PartnerJump) && !m_AutoBot;
 
-			static int autoBotCooldown = 0;
-			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
+
+			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos - pTargetChar->m_Pos : TargetTilePos - m_Pos;
 			float Delta = length(DeltaPos);
-			if(m_AutoBot &&
-				Server()->Tick() > autoBotCooldown + 4
-				&& IsColliding && Delta < 30.0f)
-			{
-				AnyJump = true;
-				autoBotCooldown = Server()->Tick();
-			}
+			vec2 ToTarget = TargetTilePos - CenterPos;
+			float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
+		
 
 			// --- 4. 核心切换逻辑 ---
-			if(AnyJump && IsColliding && IsRealWall && !AlreadyUsed)
+			if((MyJump || PartnerJump) && IsColliding && IsRealWall && !AlreadyUsed || (m_AutoBot && IsColliding && IsRealWall && !AlreadyUsed))
 			{
-				vec2 ToTarget = TargetTilePos - CenterPos;
-				float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
-
 				if(m_FirstSwitch)
 				{
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
@@ -953,7 +947,7 @@ void CCharacter::Tick()
 					m_CurrentSpeed = (m_LastBPM * pi) / (60.0f * TickSpeed);
 				}
 
-				DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
+				DeltaPos = (m_RotateMode == 0) ? TargetTilePos - pTargetChar->m_Pos : TargetTilePos - m_Pos;
 				Delta = length(DeltaPos);
 				std::string EvalMsg;
 				if(Delta < 32.0f)
@@ -1009,7 +1003,6 @@ void CCharacter::Tick()
 					CCharacter *pPartner = GameServer()->GetPlayerChar(Partner);
 					if(pPartner)
 						pPartner->Die(Partner, WEAPON_WORLD);
-
 
 					Partner = -1;
 					pTargetChar->HavePartner = false;
