@@ -804,19 +804,21 @@ void CCharacter::PreTick()
 	m_Core.Tick(true, !g_Config.m_SvNoWeakHook);
 }
 
-void CCharacter::start()
+void CCharacter::Start()
 {
-
 	if(duiyou >= 0 && duiyou != m_pPlayer->GetCid())
 	{
-		m_Pos = vec2(144.0f, 784.0f);
+		vec2 FirstOutPos;
+		auto TeleOuts = Collision()->TeleOuts(0); // tele to 1
+		FirstOutPos = TeleOuts.empty() ? vec2(0, 0) : TeleOuts[0];
+
+		m_Pos = FirstOutPos;
 		m_Core.m_Pos = m_Pos;
-	
+
 		isstart = true;
-
-
 	}
 }
+
 void CCharacter::Tick()
 {
 	if(g_Config.m_SvNoWeakHook)
@@ -861,7 +863,7 @@ void CCharacter::Tick()
 			vec2 CurrentRotatingPos = (m_RotateMode == 0) ? pTargetChar->m_Pos : m_Pos;
 			vec2 CenterPos = (m_RotateMode == 0) ? m_Pos : pTargetChar->m_Pos;
 
-			vec2 box = vec2(32.0f, 32.0f);
+			vec2 box = vec2(96.0f, 96.0f);
 			vec2 TargetTilePos = Collision()->ctile(CurrentRotatingPos, box);
 			int TargetTileIndex = Collision()->GetPureMapIndex(TargetTilePos);
 
@@ -892,11 +894,11 @@ void CCharacter::Tick()
 				m_AngleOffset = 0.0f;
 			}
 
-			bool MyJump = (m_Input.m_Jump && !m_PrevInput.m_Jump);
-			bool PartnerJump = (pTargetChar->m_Input.m_Jump && !pTargetChar->m_PrevInput.m_Jump);
+			// bool MyJump = (m_Input.m_Jump && !m_PrevInput.m_Jump);
+			// bool PartnerJump = (pTargetChar->m_Input.m_Jump && !pTargetChar->m_PrevInput.m_Jump);
 
 			// --- 4. 核心切换逻辑 ---
-			if( IsColliding && IsRealWall && !AlreadyUsed)
+			if(IsColliding && IsRealWall && !AlreadyUsed)
 			{
 				vec2 ToTarget = TargetTilePos - CenterPos;
 				float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
@@ -929,6 +931,28 @@ void CCharacter::Tick()
 					m_CurrentSpeed = (m_LastBPM * pi) / (60.0f * TickSpeed);
 				}
 
+				vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
+				float Delta = length(DeltaPos);
+				std::string EvalMsg;
+				if(Delta < 15.0f)
+				{
+					EvalMsg = "完美";
+				}
+				else if(Delta < 32.0f)
+				{
+					EvalMsg = "可以";
+				}
+				else if(Delta < 36.0f)
+				{
+					EvalMsg = "还行";
+				}
+				else
+				{
+					EvalMsg = "干啥吃的";
+				}
+				GameServer()->SendBroadcast(EvalMsg.c_str(), m_pPlayer->GetCid());
+				GameServer()->SendBroadcast(EvalMsg.c_str(), pTargetChar->m_pPlayer->GetCid());
+
 				// 吸附位置
 				if(m_RotateMode == 0)
 				{
@@ -955,11 +979,11 @@ void CCharacter::Tick()
 			// 【核心修复】：只有在非初始化状态且 RelativeTick 有效时才判定死亡
 			if(!m_FirstSwitch && RelativeTick > 0)
 			{
-				// 如果转动角度超过 2.05 圈弧度 (pi 是半圈，2.0pi 是一圈)
-				if(RelativeTick * m_CurrentSpeed >= 2.05f * pi)
+				// 如果转动角度超过一圈
+				if(RelativeTick * m_CurrentSpeed > 2.0f * pi)
 				{
 					Die(m_pPlayer->GetCid(), WEAPON_WORLD);
-					// 也要让队友一起死，确保逻辑一致
+					// 要死一起死
 					CCharacter *pPartner = GameServer()->GetPlayerChar(duiyou);
 					if(pPartner)
 						pPartner->Die(duiyou, WEAPON_WORLD);

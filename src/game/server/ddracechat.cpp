@@ -1564,7 +1564,7 @@ void CGameContext::ConStart(IConsole::IResult *pResult, void *pUserData)
 	CCharacter *pChr = pPlayer->GetCharacter();
 	if(!pChr)
 		return;
-	pChr->start();
+	pChr->Start();
 }
 
 void CGameContext::ConSayTimeAll(IConsole::IResult *pResult, void *pUserData)

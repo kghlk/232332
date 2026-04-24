@@ -47,7 +47,7 @@ public:
 	float m_BpmMod;
 	int m_DuiyouStartTick;
 	bool isstart;
-	void start();
+	void Start();
 	std::vector<int> m_UsedTiles;
 
 	void Reset() override;
