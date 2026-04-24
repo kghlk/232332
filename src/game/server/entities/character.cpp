@@ -910,9 +910,13 @@ void CCharacter::Tick()
 			static int autoBotCooldown = 0;
 			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
 			float Delta = length(DeltaPos);
+			vec2 ToTarget = TargetTilePos - CenterPos;
+			float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
 			if(m_AutoBot &&
-				Server()->Tick() > autoBotCooldown + 4
-				&& IsColliding && Delta < 30.0f)
+				Server()->Tick() > autoBotCooldown + 3 &&
+				IsColliding &&
+				Delta < 30.0f &&
+				round(TargetPhysicalAngle / (pi/2)) * pi/2 - TargetPhysicalAngle < 0)
 			{
 				AnyJump = true;
 				autoBotCooldown = Server()->Tick();
@@ -921,9 +925,6 @@ void CCharacter::Tick()
 			// --- 4. 核心切换逻辑 ---
 			if(AnyJump && IsColliding && IsRealWall && !AlreadyUsed)
 			{
-				vec2 ToTarget = TargetTilePos - CenterPos;
-				float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
-
 				if(m_FirstSwitch)
 				{
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
