@@ -35,17 +35,17 @@ public:
 	CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput);
 	int m_LastBeatStep;
 	int m_RotateMode; // 0: 锟斤拷锟斤拷锟斤拷锟斤拷, 1: 锟斤拷锟狡讹拷锟斤拷
-	float m_AngleOffset; // 锟斤拷录锟叫伙拷时锟侥角讹拷偏锟斤拷
+	double m_AngleOffset; // 锟斤拷录锟叫伙拷时锟侥角讹拷偏锟斤拷
 	float m_RotateDirection; // 锟斤拷录锟叫伙拷时锟侥角讹拷偏锟斤拷    秦始皇什么时候统一编码
-	float m_CurrentSpeed;
+	double m_CurrentSpeed;
 	float m_StartAngle;
 	bool m_FirstSwitch;
 	bool HavePartner;
 	int Partner;
-	float m_LastBPM;
+	double m_LastBPM;
 	float m_KpsFactor;
 	float m_BpmMod;
-	int m_DuiyouStartTick;
+	double m_DuiyouStartTick;
 	bool m_IsStart;
 	bool m_AutoBot;
 	void Start();

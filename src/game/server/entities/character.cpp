@@ -846,7 +846,7 @@ void CCharacter::Tick()
 	}
 	// --- 0. 队友逻辑初始化 ---
 	if(m_Core.HookedPlayer() >= 0 && !HavePartner && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->HavePartner)
-		Partner = m_Core.HookedPlayer();
+			Partner = m_Core.HookedPlayer();
 	if(Partner >= 0)
 	{
 		HavePartner = true;
@@ -865,7 +865,8 @@ void CCharacter::Tick()
 				GameServer()->CreateDeath(pTargetChar->m_Pos, pTargetChar->m_pPlayer->GetCid());
 			pTargetChar->HavePartner = true;
 
-			float TickSpeed = (float)Server()->TickSpeed();
+			double TickSpeed = (double)Server()->TickSpeed();
+			const double PI_PRECISION = 3.14159265358979323846;
 
 			// --- 1. 获取位置和地砖 ---
 			vec2 CurrentRotatingPos = (m_RotateMode == 0) ? pTargetChar->m_Pos : m_Pos;
@@ -877,6 +878,7 @@ void CCharacter::Tick()
 
 			if(m_AutoBot)
 				box = vec2(1.0f, 1.0f);
+
 			// --- 2. 状态判定 ---
 			bool IsColliding = Collision()->TestBoxSize(CurrentRotatingPos, box);
 			bool IsRealWall = Collision()->GetCollisionAt(TargetTilePos.x, TargetTilePos.y);
@@ -891,104 +893,96 @@ void CCharacter::Tick()
 				}
 			}
 
-			// --- 3. 初始化状态 (防止秒死) ---
-			if(m_DuiyouStartTick <= 0.0f)
+			// --- 3. 初始化状态 ---
+			if(m_DuiyouStartTick <= 0.0)
 			{
 				m_FirstSwitch = true;
-				if(m_LastBPM <= 0)
-					m_LastBPM = 150.0f;
-				m_CurrentSpeed = (m_LastBPM * pi) / (60.0f * TickSpeed);
+				if(m_LastBPM <= 0.0)
+					m_LastBPM = 150.0;
 
-				// 重要：初始化当前时间，防止 RelativeTick 溢出
-				m_DuiyouStartTick = (float)Server()->Tick();
-				m_AngleOffset = 0.0f;
+				m_CurrentSpeed = (m_LastBPM * PI_PRECISION) / (60.0 * TickSpeed);
+				m_DuiyouStartTick = (double)Server()->Tick();
+				m_AngleOffset = 0.0;
 			}
 
 			bool MyJump = (m_Input.m_Jump && !m_PrevInput.m_Jump);
 			bool PartnerJump = (pTargetChar->m_Input.m_Jump && !pTargetChar->m_PrevInput.m_Jump);
 
-			bool AnyJump = (MyJump || PartnerJump) && !m_AutoBot;
-
-			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos - pTargetChar->m_Pos : TargetTilePos - m_Pos;
-			float Delta = length(DeltaPos);
 			vec2 ToTarget = TargetTilePos - CenterPos;
-			float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
+			double TargetPhysicalAngle = (double)atan2(ToTarget.y, ToTarget.x);
 
 			// --- 4. 核心切换逻辑 ---
-			if((MyJump || PartnerJump) && IsColliding && IsRealWall && !AlreadyUsed || (m_AutoBot && IsColliding && IsRealWall && !AlreadyUsed))
+			if(((MyJump || PartnerJump) && !m_AutoBot || (m_AutoBot)) && IsColliding && IsRealWall && !AlreadyUsed)
 			{
 				if(m_FirstSwitch)
 				{
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
 					GameServer()->CreateMapSound(0, Partner);
-					m_DuiyouStartTick = (float)Server()->Tick();
-					m_AngleOffset = TargetPhysicalAngle + pi;
+
+					m_DuiyouStartTick = (double)Server()->Tick();
+					m_AngleOffset = TargetPhysicalAngle + PI_PRECISION;
 					m_FirstSwitch = false;
 				}
 				else
 				{
-					float AngleSwung = TargetPhysicalAngle - m_AngleOffset;
-					while(AngleSwung <= 0.05f)
-						AngleSwung += 2.0f * pi;
+					double AngleSwung = TargetPhysicalAngle - m_AngleOffset;
 
-					// 补偿时间轴
+					while(AngleSwung <= 0.0) AngleSwung += 2.0 * PI_PRECISION;
+					while(AngleSwung > 2.0 * PI_PRECISION) AngleSwung -= 2.0 * PI_PRECISION;
+
+					// 使用 旧速度 累加正确的理论时间
 					m_DuiyouStartTick += (AngleSwung / m_CurrentSpeed);
-					m_AngleOffset = TargetPhysicalAngle + pi;
+					m_AngleOffset = TargetPhysicalAngle + PI_PRECISION;
 				}
+
+				// 保存当前速度，用于后续变速比对
+				double OldSpeed = m_CurrentSpeed;
 
 				// BPM 更新
 				int BPMZoneHandle = Collision()->GetZoneHandle("bpm");
 				float ZoneValue = Collision()->GetZoneValueAt(BPMZoneHandle, TargetTilePos.x, TargetTilePos.y, 0);
 				if(ZoneValue > 0)
 				{
-					float newBPM = ZoneValue / 10.0f;
-					float newSpeed = (newBPM * pi) / (60.0f * TickSpeed);
-
-					if(newSpeed > 0.0f && fabs(newSpeed - m_CurrentSpeed) > 0.001f) // 有实际变化
-					{
-						float currentAngle = (Server()->Tick() - m_DuiyouStartTick) * m_CurrentSpeed;
-
-						m_CurrentSpeed = newSpeed;
-						m_LastBPM = newBPM;
-
-						m_DuiyouStartTick = (float)Server()->Tick() - (currentAngle / m_CurrentSpeed);
-
-						if(m_DuiyouStartTick < 0.0f) m_DuiyouStartTick = 0.0f;
-					}
+					m_LastBPM = (double)ZoneValue / 10.0;
+					m_CurrentSpeed = (m_LastBPM * PI_PRECISION) / (60.0 * TickSpeed);
 				}
 
-				DeltaPos = (m_RotateMode == 0) ? TargetTilePos - pTargetChar->m_Pos : TargetTilePos - m_Pos;
-				Delta = length(DeltaPos);
+				// --- 变速防闪现（平滑）核心逻辑 ---
+				// 如果检测到速度发生改变，缩放玩家残留的误差时间
+				if(m_CurrentSpeed != OldSpeed)
+				{
+					// 计算出当前积压的“提前量/滞后量” (Ticks)
+					double CurrentError = (double)Server()->Tick() - m_DuiyouStartTick;
+					// 将误差等比缩放到新速度的时间维度上
+					double ScaledError = CurrentError * (OldSpeed / m_CurrentSpeed);
+					// 重新校准时间轴，保证视觉连续性
+					m_DuiyouStartTick = (double)Server()->Tick() - ScaledError;
+				}
+
+				// 评价系统
+				vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos - pTargetChar->m_Pos : TargetTilePos - m_Pos;
+				float Delta = length(DeltaPos);
 				std::string EvalMsg;
-				if(Delta < 32.0f)
-				{
-					EvalMsg = "完美";
-				}
-				else if(Delta < 36.0f)
-				{
-					EvalMsg = "可以";
-				}
-				else if(Delta < 40.0f)
-				{
-					EvalMsg = "还行";
-				}
-				else
-				{
-					EvalMsg = "干啥吃的";
-				}
+				if(Delta < 32.0f) EvalMsg = "完美";
+				else if(Delta < 36.0f) EvalMsg = "可以";
+				else if(Delta < 40.0f) EvalMsg = "还行";
+				else EvalMsg = "干啥吃的";
+
 				GameServer()->SendBroadcast(EvalMsg.c_str(), m_pPlayer->GetCid());
 				GameServer()->SendBroadcast(EvalMsg.c_str(), pTargetChar->m_pPlayer->GetCid());
 
-				// 吸附位置
+				// 吸附
 				if(m_RotateMode == 0)
 				{
 					pTargetChar->m_Pos = TargetTilePos;
 					pTargetChar->m_Core.m_Pos = TargetTilePos;
+					pTargetChar->m_Core.m_Vel = vec2(0, 0);
 				}
 				else
 				{
 					m_Pos = TargetTilePos;
-					m_Core.m_Pos = TargetTilePos;
+					m_Core.m_Pos = m_Pos;
+					m_Core.m_Vel = vec2(0, 0);
 				}
 
 				m_RotateMode = !m_RotateMode;
@@ -1000,19 +994,15 @@ void CCharacter::Tick()
 			}
 
 			// --- 5. 应用渲染与死亡检测 ---
-			float RelativeTick = (float)Server()->Tick() - m_DuiyouStartTick;
+			double RelativeTick = (double)Server()->Tick() - m_DuiyouStartTick;
 
-			// 【核心修复】：只有在非初始化状态且 RelativeTick 有效时才判定死亡
-			if(!m_FirstSwitch && RelativeTick > 0)
+			if(!m_FirstSwitch)
 			{
-				// 如果转动角度超过一圈
-				if(RelativeTick * m_CurrentSpeed > 2.0f * pi)
+				if(RelativeTick > 0 && (RelativeTick * m_CurrentSpeed) > 2.1 * PI_PRECISION) 
 				{
 					Die(m_pPlayer->GetCid(), WEAPON_WORLD);
-					// 要死一起死
 					CCharacter *pPartner = GameServer()->GetPlayerChar(Partner);
-					if(pPartner)
-						pPartner->Die(Partner, WEAPON_WORLD);
+					if(pPartner) pPartner->Die(Partner, WEAPON_WORLD);
 
 					Partner = -1;
 					pTargetChar->HavePartner = false;
@@ -1021,9 +1011,9 @@ void CCharacter::Tick()
 				}
 			}
 
-			float CurrentAngle = m_AngleOffset + (RelativeTick * m_CurrentSpeed);
+			double CurrentAngle = m_AngleOffset + (RelativeTick * m_CurrentSpeed);
 			float Radius = 128.0f;
-			vec2 Offset = vec2(cos(CurrentAngle) * Radius, sin(CurrentAngle) * Radius);
+			vec2 Offset = vec2((float)cos(CurrentAngle) * Radius, (float)sin(CurrentAngle) * Radius);
 
 			if(m_RotateMode == 0)
 			{
@@ -1041,12 +1031,11 @@ void CCharacter::Tick()
 	}
 	else
 	{
-		// 状态重置
-		m_DuiyouStartTick = -1.0f;
+		m_DuiyouStartTick = -1.0;
 		m_RotateMode = 0;
 		m_UsedTiles.clear();
 		m_FirstSwitch = true;
-		m_LastBPM = 150.0f;
+		m_LastBPM = 150.0;
 	}
 	// handle Weapons
 	HandleWeapons();
