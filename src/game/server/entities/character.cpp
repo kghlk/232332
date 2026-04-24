@@ -947,8 +947,8 @@ void CCharacter::Tick()
 					m_CurrentSpeed = (m_LastBPM * pi) / (60.0f * TickSpeed);
 				}
 
-				vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
-				float Delta = length(DeltaPos);
+				DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
+				Delta = length(DeltaPos);
 				std::string EvalMsg;
 				if(Delta < 15.0f)
 				{

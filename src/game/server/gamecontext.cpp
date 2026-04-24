@@ -4058,7 +4058,7 @@ void CGameContext::RegisterDDRaceCommands()
 void CGameContext::RegisterChatCommands()
 {
 	Console()->Register("start", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConStart, this, "start");
-	Console()->Register("start", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConAutoBot, this, "autobot");
+	Console()->Register("autobot", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConAutoBot, this, "autobot");
 
 
 	Console()->Register("credits", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConCredits, this, "Shows the credits of the DDNet mod");
