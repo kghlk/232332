@@ -34,20 +34,22 @@ class CCharacter : public CEntity
 public:
 	CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput);
 	int m_LastBeatStep;
-	int m_RotateMode; // 0: ��������, 1: ���ƶ���
-	float m_AngleOffset; // ��¼�л�ʱ�ĽǶ�ƫ��
-	float m_RotateDirection; // ��¼�л�ʱ�ĽǶ�ƫ��
+	int m_RotateMode; // 0: 锟斤拷锟斤拷锟斤拷锟斤拷, 1: 锟斤拷锟狡讹拷锟斤拷
+	float m_AngleOffset; // 锟斤拷录锟叫伙拷时锟侥角讹拷偏锟斤拷
+	float m_RotateDirection; // 锟斤拷录锟叫伙拷时锟侥角讹拷偏锟斤拷    秦始皇什么时候统一编码
 	float m_CurrentSpeed;
-	float m_StartAngle; 
+	float m_StartAngle;
 	bool m_FirstSwitch;
-	bool youduiyou;
-	int duiyou;
+	bool HavePartner;
+	int Partner;
 	float m_LastBPM;
 	float m_KpsFactor;
 	float m_BpmMod;
 	int m_DuiyouStartTick;
-	bool isstart;
+	bool m_IsStart;
+	bool m_AutoBot;
 	void Start();
+	void SwitchAutoBot();
 	std::vector<int> m_UsedTiles;
 
 	void Reset() override;

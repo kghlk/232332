@@ -43,8 +43,9 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 
 	m_LatestPrevPrevInput = m_LatestPrevInput = m_LatestInput = m_PrevInput = m_SavedInput = m_Input;
 
-	duiyou = -1;
+	Partner = -1;
 	m_DuiyouStartTick= -1;
+	m_AutoBot = false;
 	m_LastTimeCp = -1;
 	m_LastTimeCpBroadcasted = -1;
 	for(float &CurrentTimeCp : m_aCurrentTimeCp)
@@ -806,7 +807,7 @@ void CCharacter::PreTick()
 
 void CCharacter::Start()
 {
-	if(duiyou >= 0 && duiyou != m_pPlayer->GetCid())
+	if(Partner >= 0 && Partner != m_pPlayer->GetCid())
 	{
 		vec2 FirstOutPos;
 		auto TeleOuts = Collision()->TeleOuts(0); // tele to 1
@@ -815,8 +816,14 @@ void CCharacter::Start()
 		m_Pos = FirstOutPos;
 		m_Core.m_Pos = m_Pos;
 
-		isstart = true;
+		m_IsStart = true;
 	}
+}
+
+void CCharacter::SwitchAutoBot()
+{
+	m_AutoBot = !m_AutoBot;
+	GameServer()->SendChatTarget(m_pPlayer->GetCid(), m_AutoBot ? "自动点击开启" : "自动点击关闭");
 }
 
 void CCharacter::Tick()
@@ -838,23 +845,23 @@ void CCharacter::Tick()
 		Antibot()->OnHookAttach(m_pPlayer->GetCid(), false);
 	}
 	// --- 0. 队友逻辑初始化 ---
-	if(m_Core.HookedPlayer() >= 0 && !youduiyou && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->youduiyou)
-		duiyou = m_Core.HookedPlayer();
-	if (duiyou >= 0)
+	if(m_Core.HookedPlayer() >= 0 && !HavePartner && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->HavePartner)
+		Partner = m_Core.HookedPlayer();
+	if (Partner >= 0)
 	{
-		youduiyou = true;
-		CCharacter *pTargetChar = GameServer()->GetPlayerChar(duiyou);
+		HavePartner = true;
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(Partner);
 		if(pTargetChar)
-			pTargetChar->youduiyou = true;
+			pTargetChar->HavePartner = true;
 	}
-	if(duiyou >= 0 && duiyou != m_pPlayer->GetCid() && isstart)
+	if(Partner >= 0 && Partner != m_pPlayer->GetCid() && m_IsStart)
 	{
-		CCharacter *pTargetChar = GameServer()->GetPlayerChar(duiyou);
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(Partner);
 		if(pTargetChar)
 		{
-			pTargetChar->youduiyou = true;
+			pTargetChar->HavePartner = true;
 			// 只有 ID 小的玩家负责逻辑计算，防止位置冲突
-			if(m_pPlayer->GetCid() > duiyou)
+			if(m_pPlayer->GetCid() > Partner)
 				return;
 
 			float TickSpeed = (float)Server()->TickSpeed();
@@ -894,11 +901,20 @@ void CCharacter::Tick()
 				m_AngleOffset = 0.0f;
 			}
 
-			// bool MyJump = (m_Input.m_Jump && !m_PrevInput.m_Jump);
-			// bool PartnerJump = (pTargetChar->m_Input.m_Jump && !pTargetChar->m_PrevInput.m_Jump);
+			bool MyJump = (m_Input.m_Jump && !m_PrevInput.m_Jump);
+			bool PartnerJump = (pTargetChar->m_Input.m_Jump && !pTargetChar->m_PrevInput.m_Jump);
+
+			bool AnyJump = (MyJump || PartnerJump) && !m_AutoBot;
+
+			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
+			float Delta = length(DeltaPos);
+			if(m_AutoBot && IsColliding && Delta < 15.0f)
+			{
+				AnyJump = true;
+			}
 
 			// --- 4. 核心切换逻辑 ---
-			if(IsColliding && IsRealWall && !AlreadyUsed)
+			if(AnyJump && IsColliding && IsRealWall && !AlreadyUsed)
 			{
 				vec2 ToTarget = TargetTilePos - CenterPos;
 				float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
@@ -906,7 +922,7 @@ void CCharacter::Tick()
 				if(m_FirstSwitch)
 				{
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
-					GameServer()->CreateMapSound(0, duiyou);
+					GameServer()->CreateMapSound(0, Partner);
 					m_DuiyouStartTick = (float)Server()->Tick();
 					m_AngleOffset = TargetPhysicalAngle + pi;
 					m_FirstSwitch = false;
@@ -984,14 +1000,14 @@ void CCharacter::Tick()
 				{
 					Die(m_pPlayer->GetCid(), WEAPON_WORLD);
 					// 要死一起死
-					CCharacter *pPartner = GameServer()->GetPlayerChar(duiyou);
+					CCharacter *pPartner = GameServer()->GetPlayerChar(Partner);
 					if(pPartner)
-						pPartner->Die(duiyou, WEAPON_WORLD);
+						pPartner->Die(Partner, WEAPON_WORLD);
 
 
-					duiyou = -1;
-					pTargetChar->youduiyou = false;
-					youduiyou = false;
+					Partner = -1;
+					pTargetChar->HavePartner = false;
+					HavePartner = false;
 					return;
 				}
 			}

@@ -437,6 +437,7 @@ private:
 
 	static void ConKillPlayer(IConsole::IResult *pResult, void *pUserData);
 	static void ConStart(IConsole::IResult *pResult, void *pUserData);
+	static void ConAutoBot(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConNinja(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnNinja(IConsole::IResult *pResult, void *pUserData);
