@@ -906,11 +906,15 @@ void CCharacter::Tick()
 
 			bool AnyJump = (MyJump || PartnerJump) && !m_AutoBot;
 
+			static int autoBotCooldown = 0;
 			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
 			float Delta = length(DeltaPos);
-			if(m_AutoBot && IsColliding && Delta < 15.0f && !m_FirstSwitch)
+			if(m_AutoBot &&
+				Server()->Tick() > autoBotCooldown + 4
+				&& IsColliding && Delta < 15.0f)
 			{
 				AnyJump = true;
+				autoBotCooldown = Server()->Tick();
 			}
 
 			// --- 4. 核心切换逻辑 ---
