@@ -879,7 +879,7 @@ void CCharacter::Tick()
 			int TargetTileIndex = Collision()->GetPureMapIndex(TargetTilePos);
 
 			// --- 2. 状态判定 ---
-			bool IsColliding = Collision()->TestBox(CurrentRotatingPos, box);
+			bool IsColliding = Collision()->TestBoxSize(CurrentRotatingPos, box);
 			bool IsRealWall = Collision()->GetCollisionAt(TargetTilePos.x, TargetTilePos.y);
 
 			bool AlreadyUsed = false;
@@ -915,7 +915,7 @@ void CCharacter::Tick()
 			float Delta = length(DeltaPos);
 			if(m_AutoBot &&
 				Server()->Tick() > autoBotCooldown + 4
-				&& IsColliding && Delta < 15.0f)
+				&& IsColliding && Delta < 30.0f)
 			{
 				AnyJump = true;
 				autoBotCooldown = Server()->Tick();
