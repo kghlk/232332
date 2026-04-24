@@ -941,8 +941,20 @@ void CCharacter::Tick()
 				float ZoneValue = Collision()->GetZoneValueAt(BPMZoneHandle, TargetTilePos.x, TargetTilePos.y, 0);
 				if(ZoneValue > 0)
 				{
-					m_LastBPM = ZoneValue / 10.0f;
-					m_CurrentSpeed = (m_LastBPM * pi) / (60.0f * TickSpeed);
+					float newBPM = ZoneValue / 10.0f;
+					float newSpeed = (newBPM * pi) / (60.0f * TickSpeed);
+
+					if(newSpeed > 0.0f && fabs(newSpeed - m_CurrentSpeed) > 0.001f) // 有实际变化
+					{
+						float currentAngle = (Server()->Tick() - m_DuiyouStartTick) * m_CurrentSpeed;
+
+						m_CurrentSpeed = newSpeed;
+						m_LastBPM = newBPM;
+
+						m_DuiyouStartTick = (float)Server()->Tick() - (currentAngle / m_CurrentSpeed);
+
+						if(m_DuiyouStartTick < 0.0f) m_DuiyouStartTick = 0.0f;
+					}
 				}
 
 				DeltaPos = (m_RotateMode == 0) ? TargetTilePos - pTargetChar->m_Pos : TargetTilePos - m_Pos;
