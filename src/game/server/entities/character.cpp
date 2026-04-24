@@ -856,9 +856,13 @@ void CCharacter::Tick()
 	}
 	if(Partner >= 0 && Partner != m_pPlayer->GetCid() && m_IsStart)
 	{
+		if(Server()->Tick() % 4 == 0)
+			GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid());
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(Partner);
 		if(pTargetChar)
 		{
+			if(Server()->Tick() % 4 == 0)
+			GameServer()->CreateDeath(pTargetChar->m_Pos, pTargetChar->m_pPlayer->GetCid());
 			pTargetChar->HavePartner = true;
 			// 只有 ID 小的玩家负责逻辑计算，防止位置冲突
 			if(m_pPlayer->GetCid() > Partner)
