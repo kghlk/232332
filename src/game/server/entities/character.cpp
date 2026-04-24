@@ -864,7 +864,6 @@ void CCharacter::Tick()
 			if(Server()->Tick() % 4 == 0)
 			GameServer()->CreateDeath(pTargetChar->m_Pos, pTargetChar->m_pPlayer->GetCid());
 			pTargetChar->HavePartner = true;
-		
 
 			float TickSpeed = (float)Server()->TickSpeed();
 
