@@ -954,15 +954,15 @@ void CCharacter::Tick()
 				DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
 				Delta = length(DeltaPos);
 				std::string EvalMsg;
-				if(Delta < 15.0f)
+				if(Delta < 32.0f)
 				{
 					EvalMsg = "完美";
 				}
-				else if(Delta < 32.0f)
+				else if(Delta < 36.0f)
 				{
 					EvalMsg = "可以";
 				}
-				else if(Delta < 36.0f)
+				else if(Delta < 40.0f)
 				{
 					EvalMsg = "还行";
 				}
