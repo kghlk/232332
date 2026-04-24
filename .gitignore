@@ -111,6 +111,7 @@ cscope.files
 cscope.out
 out
 tags
+enc_temp_folder
 # don't ignore this, it's used for the vscode workspace that ddnet provides
 !ddnet-cmake-tools-kits.json
 
