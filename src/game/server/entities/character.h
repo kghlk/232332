@@ -48,8 +48,10 @@ public:
 	double m_DuiyouStartTick;
 	bool m_IsStart;
 	bool m_AutoBot;
+	bool m_Texiao;
 	void Start();
 	void SwitchAutoBot();
+	void SwitchTexiao();
 	std::vector<int> m_UsedTiles;
 
 	void Reset() override;

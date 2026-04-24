@@ -825,6 +825,11 @@ void CCharacter::SwitchAutoBot()
 	m_AutoBot = !m_AutoBot;
 	GameServer()->SendChatTarget(m_pPlayer->GetCid(), m_AutoBot ? "自动点击开启" : "自动点击关闭");
 }
+void CCharacter::SwitchTexiao()
+{
+	m_Texiao = !m_Texiao;
+	GameServer()->SendChatTarget(m_pPlayer->GetCid(), m_Texiao ? "粒子特效开启" : "粒子特效关闭");
+}
 
 void CCharacter::Tick()
 {
@@ -856,12 +861,12 @@ void CCharacter::Tick()
 	}
 	if(Partner >= 0 && Partner != m_pPlayer->GetCid() && m_IsStart)
 	{
-		if(Server()->Tick() % 4 == 0)
+		if(Server()->Tick() % 4 == 0 && m_Texiao)
 			GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid());
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(Partner);
 		if(pTargetChar)
 		{
-			if(Server()->Tick() % 4 == 0)
+			if(Server()->Tick() % 4 == 0 && m_Texiao)
 				GameServer()->CreateDeath(pTargetChar->m_Pos, pTargetChar->m_pPlayer->GetCid());
 			pTargetChar->HavePartner = true;
 
