@@ -878,8 +878,6 @@ void CCharacter::Tick()
 			bool IsColliding = Collision()->TestBox(CurrentRotatingPos, box);
 			bool IsRealWall = Collision()->GetCollisionAt(TargetTilePos.x, TargetTilePos.y);
 
-			float RelativeTick = (float)Server()->Tick() - m_DuiyouStartTick;
-
 			bool AlreadyUsed = false;
 			for(int index : m_UsedTiles)
 			{
@@ -910,7 +908,7 @@ void CCharacter::Tick()
 
 			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos- pTargetChar->m_Pos : TargetTilePos - m_Pos;
 			float Delta = length(DeltaPos);
-			if(m_AutoBot && IsColliding && Delta < 15.0f && !m_FirstSwitch && RelativeTick > 0)
+			if(m_AutoBot && IsColliding && Delta < 15.0f && !m_FirstSwitch)
 			{
 				AnyJump = true;
 			}
@@ -992,7 +990,7 @@ void CCharacter::Tick()
 			}
 
 			// --- 5. 应用渲染与死亡检测 ---
-			RelativeTick = (float)Server()->Tick() - m_DuiyouStartTick;
+			float RelativeTick = (float)Server()->Tick() - m_DuiyouStartTick;
 
 			// 【核心修复】：只有在非初始化状态且 RelativeTick 有效时才判定死亡
 			if(!m_FirstSwitch && RelativeTick > 0)
