@@ -915,8 +915,9 @@ void CCharacter::Tick()
 			if(m_AutoBot &&
 				Server()->Tick() > autoBotCooldown + 3 &&
 				IsColliding &&
-				Delta < 30.0f &&
+				(Delta < 30.0f ||
 				round(TargetPhysicalAngle / (pi/2)) * pi/2 - TargetPhysicalAngle < 0)
+			)
 			{
 				AnyJump = true;
 				autoBotCooldown = Server()->Tick();
