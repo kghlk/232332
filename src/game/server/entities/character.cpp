@@ -909,16 +909,10 @@ void CCharacter::Tick()
 
 			bool AnyJump = (MyJump || PartnerJump) && !m_AutoBot;
 
-
 			vec2 DeltaPos = (m_RotateMode == 0) ? TargetTilePos - pTargetChar->m_Pos : TargetTilePos - m_Pos;
 			float Delta = length(DeltaPos);
-			if(m_AutoBot &&
-				Server()->Tick() > autoBotCooldown + 4
-				&& IsColliding && Delta < 30.0f)
-			{
-				AnyJump = true;
-				autoBotCooldown = Server()->Tick();
-			}
+			vec2 ToTarget = TargetTilePos - CenterPos;
+			float TargetPhysicalAngle = atan2(ToTarget.y, ToTarget.x);
 
 			// --- 4. 核心切换逻辑 ---
 			if((MyJump || PartnerJump) && IsColliding && IsRealWall && !AlreadyUsed || (m_AutoBot && IsColliding && IsRealWall && !AlreadyUsed))
