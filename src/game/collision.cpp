@@ -571,6 +571,23 @@ vec2 CCollision::ctile(vec2 Pos, vec2 Size) const
 	return ClosestTile;
 }
 
+int CCollision::GetQuadOrder(CQuad *pTargetQuad, CMapItemLayerQuads *pQLayer)
+{
+    if(!pTargetQuad || !pQLayer || !m_pLayers)
+        return -1;
+
+    const CQuad *pBaseQuads = (const CQuad *)m_pLayers->Map()->GetDataSwapped(pQLayer->m_Data);
+
+    int Order = pTargetQuad - pBaseQuads;
+
+    if(Order >= 0 && Order < pQLayer->m_NumQuads)
+    {
+        return Order;
+    }
+
+    return -1;
+}
+
 bool CCollision::IsOnGround(vec2 Pos, float Size) const
 {
 	if(CheckPoint(Pos.x + Size / 2, Pos.y + Size / 2 + 5))
