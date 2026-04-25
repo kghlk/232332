@@ -833,6 +833,7 @@ void CCharacter::SwitchTexiao()
 
 void CCharacter::Tick()
 {
+
 	if(g_Config.m_SvNoWeakHook)
 	{
 		if(m_Paused)
@@ -878,15 +879,28 @@ void CCharacter::Tick()
 			vec2 CenterPos = (m_RotateMode == 0) ? m_Pos : pTargetChar->m_Pos;
 
 			vec2 box = vec2(96.0f, 96.0f);
-			vec2 TargetTilePos = Collision()->ctile(CurrentRotatingPos, box);
-			int TargetTileIndex = Collision()->GetPureMapIndex(TargetTilePos);
-
+			vec2 TargetTilePos;
+		
+	
+		    int QuadTileZoneHandle = Collision()->GetZoneHandle("tile");
+			CQuad Quad = Collision()->GetZoneValueRectPos(QuadTileZoneHandle, CurrentRotatingPos, box, 0);
+			int Quadtile = Quad.m_ColorEnvOffset;
+		    int TargetTileIndex = Quad.m_PosEnvOffset;
+			vec2 QuadTilecenter(fx2f(Quad.m_aPoints[4].x), fx2f(Quad.m_aPoints[4].y));
+			if(Quadtile == 2)
+			{
+				TargetTilePos = QuadTilecenter;
+			}
+			
+		
+		
+		
 			if(m_AutoBot)
 				box = vec2(1.0f, 1.0f);
 
 			// --- 2. 状态判定 ---
 			bool IsColliding = Collision()->TestBoxSize(CurrentRotatingPos, box);
-			bool IsRealWall = Collision()->GetCollisionAt(TargetTilePos.x, TargetTilePos.y);
+	
 
 			bool AlreadyUsed = false;
 			for(int index : m_UsedTiles)
@@ -917,7 +931,7 @@ void CCharacter::Tick()
 			double TargetPhysicalAngle = (double)atan2(ToTarget.y, ToTarget.x);
 
 			// --- 4. 核心切换逻辑 ---
-			if(((MyJump || PartnerJump) && !m_AutoBot || (m_AutoBot)) && IsColliding && IsRealWall && !AlreadyUsed)
+			if(((MyJump || PartnerJump) && !m_AutoBot || (m_AutoBot)) && IsColliding && !AlreadyUsed)
 			{
 				if(m_FirstSwitch)
 				{
@@ -1357,9 +1371,9 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 	if(!Server()->IsSixup(SnappingClient))
 	{
 		CNetObj_Character Character = {};
-
+	
 		pCore->Write(&Character);
-
+	
 		Character.m_Tick = Tick;
 		Character.m_Emote = Emote;
 

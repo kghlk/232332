@@ -117,6 +117,7 @@ public:
 	int GetZoneValueAt(int ZoneHandle, vec2 Pos, double time, ZoneData *pData = nullptr);
 	int GetZoneValueAt2(int ZoneHandle, vec2 Pos, double time, ZoneData *pData = nullptr);
 	int GetZoneValueRect(int ZoneHandle, vec2 Pos, vec2 Size, double time, ZoneData *pData = nullptr);
+	CQuad GetZoneValueRectPos(int ZoneHandle, vec2 Pos, vec2 Size, double time, ZoneData *pData = nullptr);
 	int GetZoneValueAt(int ZoneHandle, float x, float y, double time, ZoneData *pData = nullptr) { return GetZoneValueAt(ZoneHandle, {x, y}, time, pData); }
 	int GetZoneValueAt2(int ZoneHandle, float x, float y, double time, ZoneData *pData = nullptr) { return GetZoneValueAt2(ZoneHandle, {x, y}, time, pData); }
 	int IsTimeCheckpoint(int Index) const;

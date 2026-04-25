@@ -1828,3 +1828,96 @@ EndDetection:
 	}
 	return Index;
 }
+CQuad CCollision::GetZoneValueRectPos(int ZoneHandle, vec2 Pos, vec2 Size, double time, ZoneData *pData)
+{
+	// 1. 初始化一个默认返回值（用于未发现碰撞或参数无效的情况）
+	CQuad Index = {};
+	int ExtraData = 0;
+
+	// 修复：原先这里是空返回 return;，必须返回 Index
+	if(!m_pLayers->ZoneGroup() || ZoneHandle < 0 || ZoneHandle >= (int)m_Zones.size())
+		return Index;
+
+	// 准备矩形的 4 个顶点 (AABB 逻辑)
+	float R_X = Size.x / 2.0f;
+	float R_Y = Size.y / 2.0f;
+	vec2 RectPoints[4] = {
+		Pos + vec2(-R_X, -R_Y), Pos + vec2(R_X - 2, -R_Y),
+		Pos + vec2(R_X, R_Y), Pos + vec2(-R_X - 2, R_Y)};
+
+	SAnimationTransformCache AnimationCache;
+	const array<CMapItemLayer *> &Zone = m_Zones[ZoneHandle];
+
+	for(int i = 0; i < Zone.size(); i++)
+	{
+		const CMapItemLayer *pLayer = Zone[i];
+
+		// --- Quad 层检测 (SAT 算法) ---
+		if(pLayer->m_Type == LAYERTYPE_QUADS)
+		{
+			const CMapItemLayerQuads *pQLayer = (const CMapItemLayerQuads *)pLayer;
+			const CQuad *pQuads = (const CQuad *)m_pLayers->Map()->GetDataSwapped(pQLayer->m_Data);
+
+			for(int q = 0; q < pQLayer->m_NumQuads; q++)
+			{
+				vec2 Position(0.0f, 0.0f);
+				float Angle = 0.0f;
+				if(pQuads[q].m_PosEnv >= 0)
+				{
+					if(pQuads[q].m_PosEnv != AnimationCache.PosEnv)
+					{
+						AnimationCache.PosEnv = pQuads[q].m_PosEnv;
+						GetAnimationTransform(time, AnimationCache.PosEnv, m_pLayers, AnimationCache.Position, AnimationCache.Angle);
+					}
+					Position = AnimationCache.Position;
+					Angle = AnimationCache.Angle;
+				}
+
+				// 计算 Quad 顶点并应用旋转
+				vec2 QuadPoints[4];
+				for(int j = 0; j < 4; j++)
+					QuadPoints[j] = Position + vec2(fx2f(pQuads[q].m_aPoints[j].x), fx2f(pQuads[q].m_aPoints[j].y));
+
+				if(Angle != 0)
+				{
+					vec2 center(fx2f(pQuads[q].m_aPoints[4].x), fx2f(pQuads[q].m_aPoints[4].y));
+					for(int j = 0; j < 4; j++)
+						Rotate(&center, &QuadPoints[j], Angle);
+				}
+
+				// 分离轴定理 (SAT) 判断
+				bool Overlap = true;
+				vec2 Axes[6];
+				Axes[0] = vec2(1, 0); // 矩形本地轴 X
+				Axes[1] = vec2(0, 1); // 矩形本地轴 Y
+				for(int j = 0; j < 4; j++)
+				{
+					vec2 Edge = QuadPoints[(j + 1) % 4] - QuadPoints[j];
+					Axes[j + 2] = normalize(vec2(-Edge.y, Edge.x)); // Quad 的边法线
+				}
+
+				for(int a = 0; a < 6; a++)
+				{
+					float MinR, MaxR, MinQ, MaxQ;
+					GetProjection(RectPoints, 4, Axes[a], MinR, MaxR);
+					GetProjection(QuadPoints, 4, Axes[a], MinQ, MaxQ);
+
+					if(MaxR < MinQ || MaxQ < MinR)
+					{
+						Overlap = false;
+						break;
+					}
+				}
+
+				if(Overlap)
+				{
+					Index = pQuads[q];
+					ExtraData = pQuads[q].m_aColors[0].g;
+					// 如果只需要检测到第一个碰撞就返回，可以在这里直接 return Index;
+				}
+			}
+		}
+	}
+
+	return Index;
+}
