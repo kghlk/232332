@@ -885,15 +885,15 @@ void CCharacter::Tick()
 			int QuadTileZoneHandle = Collision()->GetZoneHandle("tile");
 			CQuad Quad = Collision()->GetZoneValueRectPos(QuadTileZoneHandle, CurrentRotatingPos, box, 0);
 			int Quadtile = Quad.m_ColorEnvOffset;
-			int TargetTileIndex = Quad.m_PosEnvOffset;
+			int TargetTileIndex = Collision()->GetQuadOrder(Quad);
 			vec2 QuadTilecenter(fx2f(Quad.m_aPoints[4].x), fx2f(Quad.m_aPoints[4].y));
-			if(Quadtile == 2)
+			if(Quadtile == 0)
 			{
 				TargetTilePos = QuadTilecenter;
 			}
 
 			if(m_AutoBot)
-				box = vec2(1.0f, 1.0f);
+				box = vec2(16.0f, 16.0f);
 
 			// --- 2. 状态判定 ---
 			bool IsColliding = Collision()->TestBoxSize(CurrentRotatingPos, box);
@@ -927,7 +927,7 @@ void CCharacter::Tick()
 			double TargetPhysicalAngle = (double)atan2(ToTarget.y, ToTarget.x);
 
 			// --- 4. 核心切换逻辑 ---
-			if(((MyJump || PartnerJump) && !m_AutoBot || (m_AutoBot)) && IsColliding && !AlreadyUsed)
+			if((MyJump || PartnerJump || m_AutoBot) && IsColliding && !AlreadyUsed)
 			{
 				if(m_FirstSwitch)
 				{
