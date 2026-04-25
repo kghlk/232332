@@ -885,9 +885,10 @@ void CCharacter::Tick()
 			int QuadTileZoneHandle = Collision()->GetZoneHandle("tile");
 			CQuad Quad = Collision()->GetZoneValueRectPos(QuadTileZoneHandle, CurrentRotatingPos, box, 0);
 			int Quadtile = Quad.m_ColorEnvOffset;
-			int TargetTileIndex = Quad.m_PosEnvOffset;
+			int TargetTileIndex = Collision()->GetQuadOrder(Quad);
+
 			vec2 QuadTilecenter(fx2f(Quad.m_aPoints[4].x), fx2f(Quad.m_aPoints[4].y));
-			if(Quadtile == 2)
+			if(Quadtile == 0)
 			{
 				TargetTilePos = QuadTilecenter;
 			}
@@ -905,9 +906,20 @@ void CCharacter::Tick()
 				{
 					AlreadyUsed = true;
 					break;
+				}	
+				
+
+			}
+			if(!m_UsedTiles.empty())
+			{
+			
+				int LastTile = m_UsedTiles.back();
+
+				if(LastTile + 1 != TargetTileIndex)
+				{
+					AlreadyUsed = true;
 				}
 			}
-
 			// --- 3. 初始化状态 ---
 			if(m_DuiyouStartTick <= 0.0)
 			{
@@ -999,7 +1011,7 @@ void CCharacter::Tick()
 					m_Core.m_Pos = m_Pos;
 					m_Core.m_Vel = vec2(0, 0);
 				}
-
+		
 				m_RotateMode = !m_RotateMode;
 				m_UsedTiles.push_back(TargetTileIndex);
 				if(m_UsedTiles.size() > 10)
@@ -1042,6 +1054,7 @@ void CCharacter::Tick()
 				m_Core.m_Pos = m_Pos;
 				m_Core.m_Vel = vec2(0, 0);
 			}
+
 		}
 	}
 	else
