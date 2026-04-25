@@ -41,7 +41,7 @@ public:
 	float m_StartAngle;
 	bool m_FirstSwitch;
 	bool HavePartner;
-	int Partner;
+	int m_Partner;
 	double m_LastBPM;
 	float m_KpsFactor;
 	float m_BpmMod;

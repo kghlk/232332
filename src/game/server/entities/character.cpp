@@ -43,7 +43,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 
 	m_LatestPrevPrevInput = m_LatestPrevInput = m_LatestInput = m_PrevInput = m_SavedInput = m_Input;
 
-	Partner = -1;
+	m_Partner = -1;
 	m_DuiyouStartTick = -1;
 	m_AutoBot = false;
 	m_LastTimeCp = -1;
@@ -807,7 +807,7 @@ void CCharacter::PreTick()
 
 void CCharacter::Start()
 {
-	if(Partner >= 0 && Partner != m_pPlayer->GetCid())
+	if(m_Partner >= 0 && m_Partner != m_pPlayer->GetCid())
 	{
 		vec2 FirstOutPos;
 		auto TeleOuts = Collision()->TeleOuts(0); // tele to 1
@@ -853,19 +853,37 @@ void CCharacter::Tick()
 
 	// --- 0. 队友逻辑初始化 ---
 	if(m_Core.HookedPlayer() >= 0 && !HavePartner && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->HavePartner)
-			Partner = m_Core.HookedPlayer();
-	if(Partner >= 0)
+			m_Partner = m_Core.HookedPlayer();
+	if(m_Partner >= 0)
 	{
 		HavePartner = true;
-		CCharacter *pTargetChar = GameServer()->GetPlayerChar(Partner);
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
 		if(pTargetChar)
 			pTargetChar->HavePartner = true;
 	}
-	if(Partner >= 0 && Partner != m_pPlayer->GetCid() && m_IsStart)
+
+	if(m_Partner >= 0 && m_Partner != m_pPlayer->GetCid() && !m_IsStart)
+	{
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
+		if(pTargetChar)
+		{
+			vec2 PartnerPos = pTargetChar->m_Pos;
+			vec2 SelfPos = m_Pos;
+			vec2 Delta = SelfPos - PartnerPos;
+			float DistanceSq = length_squared(Delta);
+			if(sqrt(DistanceSq) > 48.0)
+			{
+				float Acc = DistanceSq * 0.000009766; // acc后边啥来着，忘了
+				pTargetChar->m_Core.m_Vel += normalize(Delta) * Acc;
+			}
+		}
+	}
+
+	if(m_Partner >= 0 && m_Partner != m_pPlayer->GetCid() && m_IsStart)
 	{
 		if(Server()->Tick() % 4 == 0 && m_Texiao)
 			GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid());
-		CCharacter *pTargetChar = GameServer()->GetPlayerChar(Partner);
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
 		if(pTargetChar)
 		{
 			if(Server()->Tick() % 4 == 0 && m_Texiao)
@@ -942,7 +960,7 @@ void CCharacter::Tick()
 				if(m_FirstSwitch)
 				{
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
-					GameServer()->CreateMapSound(0, Partner);
+					GameServer()->CreateMapSound(0, m_Partner);
 
 					m_DuiyouStartTick = (double)Server()->Tick();
 					m_AngleOffset = TargetPhysicalAngle + PI_PRECISION;
@@ -1026,10 +1044,10 @@ void CCharacter::Tick()
 				if(RelativeTick > 0 && (RelativeTick * m_CurrentSpeed) > 2.1 * PI_PRECISION) 
 				{
 					Die(m_pPlayer->GetCid(), WEAPON_WORLD);
-					CCharacter *pPartner = GameServer()->GetPlayerChar(Partner);
-					if(pPartner) pPartner->Die(Partner, WEAPON_WORLD);
+					CCharacter *pPartner = GameServer()->GetPlayerChar(m_Partner);
+					if(pPartner) pPartner->Die(m_Partner, WEAPON_WORLD);
 
-					Partner = -1;
+					m_Partner = -1;
 					pTargetChar->HavePartner = false;
 					HavePartner = false;
 					return;

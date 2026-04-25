@@ -4707,12 +4707,50 @@ void CGameContext::OnSnap(int ClientId, bool GlobalSnap, bool RecordingDemo)
 	if(ClientId > -1)
 		m_apPlayers[ClientId]->FakeSnap();
 
+	int aLinkSnapIds[64];
+	for(int &Id : aLinkSnapIds)
+	{
+		Id = Server()->SnapNewId();
+	}
+
+	for (size_t Pid = 0; Pid < 128; ++Pid)
+	{
+		CPlayer *pPlayer = m_apPlayers[Pid];
+		if(!pPlayer)
+			continue;
+		CCharacter *pCharacter = pPlayer->GetCharacter();
+		if(!pCharacter || pCharacter->m_Partner < 0 || pCharacter->m_Partner == pPlayer->GetCid() || pCharacter->m_IsStart)
+			continue;
+		CPlayer *pTargetPlayer = m_apPlayers[pCharacter->m_Partner];
+		if(!pTargetPlayer)
+			continue;
+		CCharacter *pTargetCharacter = pTargetPlayer->GetCharacter();
+		if(!pTargetCharacter)
+			continue;
+
+		vec2 TargetPos = pTargetCharacter->m_Pos;
+		vec2 PlayerPos = pCharacter->m_Pos;
+		vec2 LinkStartPos = PlayerPos + normalize(TargetPos - PlayerPos)*32;
+
+		int SnappingClientVersion = GetClientVersion(ClientId);
+		CSnapContext Context(SnappingClientVersion, Server()->IsSixup(ClientId), ClientId);
+		SnapLaserObject(Context, aLinkSnapIds[Pid],
+			TargetPos,
+			LinkStartPos,
+			Server()->Tick(), -1, LASERTYPE_DRAGGER);
+	}
+
 	m_World.Snap(ClientId);
 
 	// events are only sent on global snapshots
 	if(GlobalSnap)
 	{
 		m_Events.Snap(ClientId);
+	}
+
+	for(int &Id : aLinkSnapIds)
+	{
+		Server()->SnapFreeId(Id);
 	}
 }
 
