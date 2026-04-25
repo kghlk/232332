@@ -113,7 +113,7 @@ public:
 		int Index = -1;
 		int ExtraData = -1;
 	};
-	int GetQuadOrder(CQuad *pTargetQuad, CMapItemLayerQuads *pQLayer);
+	int GetQuadOrder(CQuad TargetQuad);
 	int GetZoneHandle(const char *pName);
 	int GetZoneValueAt(int ZoneHandle, vec2 Pos, double time, ZoneData *pData = nullptr);
 	int GetZoneValueAt2(int ZoneHandle, vec2 Pos, double time, ZoneData *pData = nullptr);

@@ -850,6 +850,7 @@ void CCharacter::Tick()
 	{
 		Antibot()->OnHookAttach(m_pPlayer->GetCid(), false);
 	}
+
 	// --- 0. 队友逻辑初始化 ---
 	if(m_Core.HookedPlayer() >= 0 && !HavePartner && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->HavePartner)
 			Partner = m_Core.HookedPlayer();
@@ -1051,6 +1052,7 @@ void CCharacter::Tick()
 		m_FirstSwitch = true;
 		m_LastBPM = 150.0;
 	}
+
 	// handle Weapons
 	HandleWeapons();
 

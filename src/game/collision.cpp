@@ -549,7 +549,6 @@ vec2 CCollision::ctile(vec2 Pos, vec2 Size) const
 
 	vec2 ClosestTile = Pos;
 	float MinDist = 1000000.0f;
-	bool Found = false;
 
 	for(int y = StartY; y <= EndY; y++)
 	{
@@ -563,7 +562,6 @@ vec2 CCollision::ctile(vec2 Pos, vec2 Size) const
 				{
 					MinDist = d;
 					ClosestTile = TileCenter;
-					Found = true;
 				}
 			}
 		}
@@ -571,18 +569,33 @@ vec2 CCollision::ctile(vec2 Pos, vec2 Size) const
 	return ClosestTile;
 }
 
-int CCollision::GetQuadOrder(CQuad *pTargetQuad, CMapItemLayerQuads *pQLayer)
+int CCollision::GetQuadOrder(CQuad TargetQuad)
 {
-    if(!pTargetQuad || !pQLayer || !m_pLayers)
+    CMapItemLayerQuads *pQLayer = nullptr;
+
+    char aLayerName[12];
+    for(int l = 0; l < m_pLayers->ZoneGroup()->m_NumLayers; l++)
+    {
+        CMapItemLayer *pLayer = m_pLayers->GetLayer(m_pLayers->ZoneGroup()->m_StartLayer + l);
+
+        if(pLayer->m_Type == LAYERTYPE_QUADS)
+        {
+            CMapItemLayerQuads *pQLayerL = (CMapItemLayerQuads *)pLayer;
+            IntsToStr(pQLayerL->m_aName, std::size(pQLayerL->m_aName), aLayerName, std::size(aLayerName));
+            if(str_comp("tile", aLayerName) == 0)
+                pQLayer = pQLayerL;
+        }
+    }
+
+    if(!pQLayer || !m_pLayers)
         return -1;
 
-    const CQuad *pBaseQuads = (const CQuad *)m_pLayers->Map()->GetDataSwapped(pQLayer->m_Data);
+    const CQuad *pQuads = (const CQuad *)m_pLayers->Map()->GetDataSwapped(pQLayer->m_Data);
 
-    int Order = pTargetQuad - pBaseQuads;
-
-    if(Order >= 0 && Order < pQLayer->m_NumQuads)
-    {
-        return Order;
+    for(int i = 0; i < pQLayer->m_NumQuads; i++) {
+        if(memcmp(&pQuads[i], &TargetQuad, sizeof(CQuad)) == 0) {
+            return i;
+        }
     }
 
     return -1;
@@ -1849,7 +1862,7 @@ CQuad CCollision::GetZoneValueRectPos(int ZoneHandle, vec2 Pos, vec2 Size, doubl
 {
 	// 1. 初始化一个默认返回值（用于未发现碰撞或参数无效的情况）
 	CQuad Index = {};
-	int ExtraData = 0;
+	// int ExtraData = 0;
 
 	// 修复：原先这里是空返回 return;，必须返回 Index
 	if(!m_pLayers->ZoneGroup() || ZoneHandle < 0 || ZoneHandle >= (int)m_Zones.size())
@@ -1929,7 +1942,7 @@ CQuad CCollision::GetZoneValueRectPos(int ZoneHandle, vec2 Pos, vec2 Size, doubl
 				if(Overlap)
 				{
 					Index = pQuads[q];
-					ExtraData = pQuads[q].m_aColors[0].g;
+					// ExtraData = pQuads[q].m_aColors[0].g;
 					// 如果只需要检测到第一个碰撞就返回，可以在这里直接 return Index;
 				}
 			}
