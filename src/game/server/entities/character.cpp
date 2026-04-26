@@ -826,6 +826,8 @@ void CCharacter::Start()
 		m_Core.m_Pos = m_Pos;
 
 		m_IsStart = true;
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
+		pTargetChar->m_IsStart = true;
 	}
 }
 
@@ -1395,7 +1397,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		Health = 0, Armor = 0;
 	int Emote = DetermineEyeEmote();
 	int Tick;
-	if(!m_ReckoningTick || GameServer()->m_pController->IsGamePaused())
+	if(!m_ReckoningTick || GameServer()->m_pController->IsGamePaused()|| m_IsStart)
 	{
 		Tick = 0;
 		pCore = &m_Core;
@@ -1487,7 +1489,12 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 		Character.m_X = FakeX;
 		Character.m_Y = FakeY;
-
+		
+		if(m_PlayingAnimation)
+		{
+			Character.m_VelX = 0;
+			Character.m_VelY = 0;
+		}
 		Character.m_Tick = Tick;
 		Character.m_Emote = Emote;
 
