@@ -69,7 +69,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_LastRefillJumps = false;
 	m_LastPenalty = false;
 	m_LastBonus = false;
-
+	HavePartner = false;
 	m_TeleGunTeleport = false;
 	m_IsBlueTeleGunTeleport = false;
 
@@ -850,7 +850,7 @@ void CCharacter::Tick()
 	{
 		Antibot()->OnHookAttach(m_pPlayer->GetCid(), false);
 	}
-
+	
 	// --- 0. 队友逻辑初始化 ---
 	if(m_Core.HookedPlayer() >= 0 && !HavePartner && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->HavePartner)
 			m_Partner = m_Core.HookedPlayer();
@@ -860,6 +860,12 @@ void CCharacter::Tick()
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
 		if(pTargetChar)
 			pTargetChar->HavePartner = true;
+
+		if(!GameServer()->m_apPlayers[m_Partner])
+		{
+			m_Partner = -1;
+			HavePartner = false;
+		}
 	}
 
 	if(m_Partner >= 0 && m_Partner != m_pPlayer->GetCid() && !m_IsStart)
@@ -1260,6 +1266,12 @@ void CCharacter::StopRecording()
 
 void CCharacter::Die(int Killer, int Weapon, bool SendKillMsg)
 {
+	m_Partner = -1;
+	HavePartner = false;
+	CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
+	if(pTargetChar)
+		pTargetChar->HavePartner = false;
+
 	if(Killer != WEAPON_GAME && m_SetSavePos[RESCUEMODE_AUTO])
 		GetPlayer()->m_LastDeath = m_RescueTee[RESCUEMODE_AUTO];
 	StopRecording();
