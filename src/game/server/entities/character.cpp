@@ -960,8 +960,20 @@ void CCharacter::Tick()
 			vec2 ToTarget = TargetTilePos - CenterPos;
 			double TargetPhysicalAngle = (double)atan2(ToTarget.y, ToTarget.x);
 
+			if(((MyJump || PartnerJump) && !m_AutoBot) && (!IsColliding || AlreadyUsed))
+			{
+				Die(m_pPlayer->GetCid(), WEAPON_WORLD);
+				CCharacter *pPartner = GameServer()->GetPlayerChar(m_Partner);
+				if(pPartner) pPartner->Die(m_Partner, WEAPON_WORLD);
+
+				m_Partner = -1;
+				pTargetChar->HavePartner = false;
+				HavePartner = false;
+				return;
+			}
+
 			// --- 4. 核心切换逻辑 ---
-			if((MyJump || PartnerJump || m_AutoBot) && IsColliding && !AlreadyUsed)
+			if((((MyJump || PartnerJump) && !m_AutoBot) || m_AutoBot) && IsColliding && !AlreadyUsed)
 			{
 				if(m_FirstSwitch)
 				{
@@ -1033,7 +1045,7 @@ void CCharacter::Tick()
 					m_Core.m_Pos = m_Pos;
 					m_Core.m_Vel = vec2(0, 0);
 				}
-		
+
 				m_RotateMode = !m_RotateMode;
 				m_UsedTiles.push_back(TargetTileIndex);
 				if(m_UsedTiles.size() > 10)
