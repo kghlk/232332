@@ -72,7 +72,6 @@ protected:
 
 	char m_aMapWish[MAX_MAP_LENGTH];
 
-	int m_RoundStartTick;
 	int m_GameOverTick;
 	int m_SuddenDeath;
 
@@ -83,7 +82,7 @@ protected:
 
 public:
 	const char *m_pGameType;
-
+	int m_RoundStartTick;
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController();
 
