@@ -1435,6 +1435,8 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 	int FakeX = m_RotateCenter.x + PosOffset.x;
 	int FakeY = m_RotateCenter.y + PosOffset.y;
 
+	m_SendCore.m_Pos = vec2(FakeX, FakeY);
+
 	if(m_PlayingAnimation)
 	{
 		int CurrentTick = Server()->Tick();
@@ -1604,8 +1606,14 @@ bool CCharacter::IsSnappingCharacterInView(int SnappingClientId)
 {
 	int Id = m_pPlayer->GetCid();
 
+	vec2 Diff = m_Pos - m_RotateCenter;
+	double Distance = length(Diff);
+	double RealAngle = atan2(Diff.y, Diff.x);
+	vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
+	vec2 FakePos = m_RotateCenter + PosOffset;
+
 	// A player may not be clipped away if their hook or a hook attached to them is in the field of view
-	bool PlayerAndHookNotInView = NetworkClippedLine(SnappingClientId, m_Pos, m_Core.m_HookPos);
+	bool PlayerAndHookNotInView = NetworkClippedLine(SnappingClientId, FakePos, m_Core.m_HookPos);
 	bool AttachedHookInView = false;
 	if(PlayerAndHookNotInView)
 	{
@@ -1614,7 +1622,7 @@ bool CCharacter::IsSnappingCharacterInView(int SnappingClientId)
 			const CCharacter *pOtherPlayer = GameServer()->GetPlayerChar(AttachedPlayerId);
 			if(pOtherPlayer && pOtherPlayer->m_Core.HookedPlayer() == Id)
 			{
-				if(!NetworkClippedLine(SnappingClientId, m_Pos, pOtherPlayer->m_Pos))
+				if(!NetworkClippedLine(SnappingClientId, FakePos, pOtherPlayer->m_Pos))
 				{
 					AttachedHookInView = true;
 					break;
