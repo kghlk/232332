@@ -237,7 +237,7 @@ void CPlayer::Tick()
 			if(m_pCharacter->IsAlive())
 			{
 				ProcessPause();
-				if(!m_Paused)
+				if(!m_Paused && !m_pCharacter->m_IsStart)
 					m_ViewPos = m_pCharacter->m_Pos;
 			}
 			else if(!m_pCharacter->IsPaused())

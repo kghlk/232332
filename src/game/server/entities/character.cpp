@@ -914,6 +914,8 @@ void CCharacter::Tick()
 			vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
 			vec2 FakePos = m_RotateCenter + PosOffset;
 
+			GetPlayer()->m_ViewPos = FakePos;
+
 			if(Server()->Tick() % 4 == 0 && m_Texiao)
 				GameServer()->CreateDeath(FakePos, m_pPlayer->GetCid());
 
@@ -922,6 +924,8 @@ void CCharacter::Tick()
 			double RealAnglePartner = atan2(DiffPartner.y, DiffPartner.x);
 			vec2 PosOffsetPartner = vec2(DistancePartner * cos(RealAnglePartner + pTargetChar->m_CurrentAngle), DistancePartner * sin(RealAnglePartner + pTargetChar->m_CurrentAngle));
 			vec2 FakePosPartner = pTargetChar->m_RotateCenter + PosOffsetPartner;
+
+			pTargetChar->GetPlayer()->m_ViewPos = FakePos;
 
 			if(Server()->Tick() % 4 == 0 && m_Texiao)
 				GameServer()->CreateDeath(FakePosPartner, pTargetChar->m_pPlayer->GetCid());
@@ -1113,7 +1117,7 @@ void CCharacter::Tick()
 			// --- 5. 应用渲染与死亡检测 ---
 			double RelativeTick = (double)Server()->Tick() - m_DuiyouStartTick;
 
-			if(!m_FirstSwitch)
+			if(!m_FirstSwitch && m_DDRaceState != ERaceState::FINISHED)
 			{
 				if(RelativeTick > 0 && (RelativeTick * m_CurrentSpeed) > 2.1 * PI_PRECISION)
 				{
