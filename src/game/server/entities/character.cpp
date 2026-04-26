@@ -49,7 +49,8 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 
 	m_PlayingAnimation = false;
 	m_AnimationStartTick = 0;
-	m_AnimationStopTick = 0;
+	m_AnimationLengthTick = 0;
+	m_RotateCenter = vec2(0, 0);
 	m_AnimationRotate = 0.0;
 	m_CurrentAngle = 0.0;
 
@@ -1379,10 +1380,15 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 	int FakeX = pCore->m_Pos.x;
 	int FakeY = pCore->m_Pos.y;
+	m_CurrentAngle = pi;
+	double Distance = length(m_RotateCenter - pCore->m_Pos);
+	vec2 PosOffset = vec2(Distance * cos(m_CurrentAngle), Distance * sin(m_CurrentAngle));
+	FakeX += PosOffset.x;
+	FakeY += PosOffset.y;
 
 	if(m_PlayingAnimation)
 	{
-		;
+		double AnimationProg = (Server()->Tick() - m_AnimationStartTick) / m_AnimationLengthTick;
 	}
 
 	// use ninja graphic for old clients if player is frozen

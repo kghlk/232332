@@ -52,7 +52,7 @@ public:
 
 	bool m_PlayingAnimation;
 	int m_AnimationStartTick;
-	int m_AnimationStopTick;
+	int m_AnimationLengthTick;
 	vec2 m_RotateCenter;
 	double m_AnimationRotate;
 	double m_CurrentAngle;
