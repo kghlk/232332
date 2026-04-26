@@ -99,7 +99,7 @@ public:
 	int m_LastCommandPos;
 	int m_LastWhisperTo;
 	int m_LastInvited;
-
+	int m_RoundStartTick;
 	int m_SendVoteIndex;
 
 	CTeeInfo m_TeeInfos;

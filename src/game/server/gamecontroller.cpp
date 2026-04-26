@@ -607,7 +607,7 @@ void IGameController::Snap(int SnappingClient)
 		GameInfo.m_GameStateFlags |= GAMESTATEFLAG_SUDDENDEATH;
 	if(IsGamePaused())
 		GameInfo.m_GameStateFlags |= GAMESTATEFLAG_PAUSED;
-	GameInfo.m_RoundStartTick = m_RoundStartTick;
+	GameInfo.m_RoundStartTick = GameServer()->m_apPlayers[SnappingClient]->m_RoundStartTick;
 	GameInfo.m_WarmupTimer = m_Warmup;
 
 	GameInfo.m_RoundNum = 0;

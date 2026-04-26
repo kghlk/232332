@@ -55,6 +55,7 @@ void CPlayer::Reset()
 	m_TeamChangeTick = Server()->Tick();
 	m_LastSetTeam = 0;
 	m_LastInvited = 0;
+	m_RoundStartTick = GameServer()->m_pController->m_RoundStartTick;
 	m_WeakHookSpawn = false;
 
 	int *pIdMap = Server()->GetIdMap(m_ClientId);

@@ -987,6 +987,8 @@ void CCharacter::Tick()
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
 					GameServer()->CreateMapSound(0, m_Partner);
 
+					m_pPlayer->m_RoundStartTick = Server()->Tick();
+					GameServer()->GetPlayerChar(m_Partner)->m_pPlayer->m_RoundStartTick = Server()->Tick();
 					m_DuiyouStartTick = (double)Server()->Tick();
 					m_AngleOffset = TargetPhysicalAngle + PI_PRECISION;
 					m_FirstSwitch = false;
