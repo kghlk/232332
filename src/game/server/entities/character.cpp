@@ -827,6 +827,7 @@ void CCharacter::Start()
 
 		m_IsStart = true;
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
+		if(pTargetChar)
 		pTargetChar->m_IsStart = true;
 	}
 }
