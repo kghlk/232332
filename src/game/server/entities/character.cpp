@@ -1435,6 +1435,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		else
 		{
 			// double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
+			double easedProg = AnimationProg;
 			m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate * easedProg;
 		}
 	}
