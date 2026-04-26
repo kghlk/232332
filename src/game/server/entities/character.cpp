@@ -921,10 +921,10 @@ void CCharacter::Tick()
 			// 炒鸡雾滴啤梨动画
 			int QuadAnimationZoneHandle = Collision()->GetZoneHandle("ani");
 			CQuad AniQuad = Collision()->GetZoneValueRectPos(QuadAnimationZoneHandle, CurrentRotatingPos, vec2(16.0, 16.0), 0);
-			if(AniQuad.m_ColorEnvOffset > 0)
+			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation)
 			{
 				GameServer()->SendBroadcast("animation", -1);
-				int AnimationStartTick = Server()->Tick();
+				int AnimationStartTick = Server()->Tick() - round_to_int((m_LastBPM * PI_PRECISION) / (60.0 * TickSpeed) * 16);
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
 				double AnimationStartAngle = m_CurrentAngle;
 				double AnimationRotate = (double)AniQuad.m_PosEnvOffset * pi/180;
@@ -1092,7 +1092,12 @@ void CCharacter::Tick()
 				if(m_UsedTiles.size() > 10)
 					m_UsedTiles.erase(m_UsedTiles.begin());
 
-				GameServer()->CreateSound(m_Pos, SOUND_HAMMER_HIT, TeamMask());
+				vec2 Diff = m_Pos - m_RotateCenter;
+				double Distance = length(Diff);
+				double RealAngle = atan2(Diff.y, Diff.x);
+				vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
+				vec2 FakePos = m_RotateCenter + PosOffset;
+				GameServer()->CreateSound(FakePos, SOUND_HAMMER_HIT, TeamMask());
 			}
 
 			// --- 5. 应用渲染与死亡检测 ---
@@ -1398,7 +1403,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		Health = 0, Armor = 0;
 	int Emote = DetermineEyeEmote();
 	int Tick;
-	if(!m_ReckoningTick || GameServer()->m_pController->IsGamePaused()|| m_IsStart)
+	if(!m_ReckoningTick || GameServer()->m_pController->IsGamePaused() || m_IsStart)
 	{
 		Tick = 0;
 		pCore = &m_Core;
@@ -1429,7 +1434,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		}
 		else
 		{
-			double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
+			// double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
 			m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate * easedProg;
 		}
 	}
@@ -1490,12 +1495,13 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 		Character.m_X = FakeX;
 		Character.m_Y = FakeY;
-		
+
 		if(m_PlayingAnimation)
 		{
 			Character.m_VelX = 0;
 			Character.m_VelY = 0;
 		}
+
 		Character.m_Tick = Tick;
 		Character.m_Emote = Emote;
 
@@ -1527,6 +1533,12 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 		Character.m_X = FakeX;
 		Character.m_Y = FakeY;
+
+		if(m_PlayingAnimation)
+		{
+			Character.m_VelX = 0;
+			Character.m_VelY = 0;
+		}
 
 		// m_HookTick can be negative when using the hook_duration tune, which 0.7 clients
 		// will consider invalid. https://github.com/ddnet/ddnet/issues/3915
