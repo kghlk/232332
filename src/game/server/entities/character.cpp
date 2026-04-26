@@ -51,8 +51,9 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_AnimationStartTick = 0;
 	m_AnimationLengthTick = 0;
 	m_RotateCenter = vec2(0, 0);
+	m_AnimationStartAngle = 0.0;
 	m_AnimationRotate = 0.0;
-	m_CurrentAngle = 0;
+	m_CurrentAngle = 0.0;
 
 	m_LastTimeCp = -1;
 	m_LastTimeCpBroadcasted = -1;
@@ -1387,7 +1388,20 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 	if(m_PlayingAnimation)
 	{
-		double AnimationProg = (Server()->Tick() - m_AnimationStartTick) / m_AnimationLengthTick;
+		int CurrentTick = Server()->Tick();
+		int ProgTick = CurrentTick - m_AnimationStartTick;
+		double AnimationProg = (double)ProgTick / m_AnimationLengthTick;
+
+		if(AnimationProg >= 1.0)
+		{
+			m_PlayingAnimation = false;
+			m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate;
+		}
+		else
+		{
+			double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
+			m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate * easedProg;
+		}
 	}
 
 	// use ninja graphic for old clients if player is frozen

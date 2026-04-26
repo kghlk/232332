@@ -54,6 +54,7 @@ public:
 	int m_AnimationStartTick;
 	int m_AnimationLengthTick;
 	vec2 m_RotateCenter;
+	double m_AnimationStartAngle;
 	double m_AnimationRotate;
 	double m_CurrentAngle;
 
