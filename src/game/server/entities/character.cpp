@@ -1378,13 +1378,10 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		pCore = &m_SendCore;
 	}
 
-	int FakeX = pCore->m_Pos.x;
-	int FakeY = pCore->m_Pos.y;
-	m_CurrentAngle = pi;
 	double Distance = length(m_RotateCenter - pCore->m_Pos);
 	vec2 PosOffset = vec2(Distance * cos(m_CurrentAngle), Distance * sin(m_CurrentAngle));
-	FakeX += PosOffset.x;
-	FakeY += PosOffset.y;
+	int FakeX = m_RotateCenter.x + PosOffset.x;
+	int FakeY = m_RotateCenter.y + PosOffset.y;
 
 	if(m_PlayingAnimation)
 	{
