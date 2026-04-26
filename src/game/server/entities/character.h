@@ -49,6 +49,14 @@ public:
 	bool m_IsStart;
 	bool m_AutoBot;
 	bool m_Texiao;
+
+	bool m_PlayingAnimation;
+	int m_AnimationStartTick;
+	int m_AnimationStopTick;
+	vec2 m_RotateCenter;
+	double m_AnimationRotate;
+	double m_CurrentAngle;
+
 	void Start();
 	void SwitchAutoBot();
 	void SwitchTexiao();

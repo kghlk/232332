@@ -46,6 +46,13 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_Partner = -1;
 	m_DuiyouStartTick = -1;
 	m_AutoBot = false;
+
+	m_PlayingAnimation = false;
+	m_AnimationStartTick = 0;
+	m_AnimationStopTick = 0;
+	m_AnimationRotate = 0.0;
+	m_CurrentAngle = 0.0;
+
 	m_LastTimeCp = -1;
 	m_LastTimeCpBroadcasted = -1;
 	for(float &CurrentTimeCp : m_aCurrentTimeCp)
@@ -1354,7 +1361,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 	int SnappingClientVersion = GameServer()->GetClientVersion(SnappingClient);
 	CCharacterCore *pCore;
 	int Weapon = m_Core.m_ActiveWeapon, AmmoCount = 0,
-	    Health = 0, Armor = 0;
+		Health = 0, Armor = 0;
 	int Emote = DetermineEyeEmote();
 	int Tick;
 	if(!m_ReckoningTick || GameServer()->m_pController->IsGamePaused())
@@ -1366,6 +1373,14 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 	{
 		Tick = m_ReckoningTick;
 		pCore = &m_SendCore;
+	}
+
+	int FakeX = pCore->m_Pos.x;
+	int FakeY = pCore->m_Pos.y;
+
+	if(m_PlayingAnimation)
+	{
+		;
 	}
 
 	// use ninja graphic for old clients if player is frozen
@@ -1419,9 +1434,12 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 	if(!Server()->IsSixup(SnappingClient))
 	{
 		CNetObj_Character Character = {};
-	
+
 		pCore->Write(&Character);
-	
+
+		Character.m_X = FakeX;
+		Character.m_Y = FakeY;
+
 		Character.m_Tick = Tick;
 		Character.m_Emote = Emote;
 
@@ -1450,6 +1468,9 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		{
 			Character.m_Angle -= (int)(2.0f * pi * 256.0f);
 		}
+
+		Character.m_X = FakeX;
+		Character.m_Y = FakeY;
 
 		// m_HookTick can be negative when using the hook_duration tune, which 0.7 clients
 		// will consider invalid. https://github.com/ddnet/ddnet/issues/3915
