@@ -1266,8 +1266,6 @@ void CCharacter::StopRecording()
 
 void CCharacter::Die(int Killer, int Weapon, bool SendKillMsg)
 {
-	m_Partner = -1;
-	HavePartner = false;
 	CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
 	if(pTargetChar)
 		pTargetChar->HavePartner = false;
