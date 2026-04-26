@@ -52,7 +52,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_AnimationLengthTick = 0;
 	m_RotateCenter = vec2(0, 0);
 	m_AnimationRotate = 0.0;
-	m_CurrentAngle = 0.0;
+	m_CurrentAngle = 0;
 
 	m_LastTimeCp = -1;
 	m_LastTimeCpBroadcasted = -1;
@@ -1378,8 +1378,10 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		pCore = &m_SendCore;
 	}
 
-	double Distance = length(m_RotateCenter - pCore->m_Pos);
-	vec2 PosOffset = vec2(Distance * cos(m_CurrentAngle), Distance * sin(m_CurrentAngle));
+	vec2 Diff = pCore->m_Pos - m_RotateCenter;
+	double Distance = length(Diff);
+	double RealAngle = atan2(Diff.y, Diff.x);
+	vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
 	int FakeX = m_RotateCenter.x + PosOffset.x;
 	int FakeY = m_RotateCenter.y + PosOffset.y;
 
