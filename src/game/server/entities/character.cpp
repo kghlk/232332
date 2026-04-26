@@ -918,19 +918,23 @@ void CCharacter::Tick()
 			// 炒鸡雾滴啤梨动画
 			int QuadAnimationZoneHandle = Collision()->GetZoneHandle("ani");
 			CQuad AniQuad = Collision()->GetZoneValueRectPos(QuadAnimationZoneHandle, CurrentRotatingPos, vec2(16.0, 16.0), 0);
-			if(Collision()->TestBoxSize(CurrentRotatingPos, vec2(16.0, 16.0)))
+			if(AniQuad.m_ColorEnvOffset > 0)
 			{
+				GameServer()->SendBroadcast("animation", -1);
 				int AnimationStartTick = Server()->Tick();
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
-				int AnimationRotate = AniQuad.m_PosEnvOffset * pi/180;
+				double AnimationStartAngle = m_CurrentAngle;
+				double AnimationRotate = (double)AniQuad.m_PosEnvOffset * pi/180;
 				vec2 RotateCenter = vec2(fx2f(AniQuad.m_aPoints[4].x), fx2f(AniQuad.m_aPoints[4].y));
 
 				m_AnimationStartTick = AnimationStartTick;
 				m_AnimationLengthTick = AnimationLength;
+				m_AnimationStartAngle = AnimationStartAngle;
 				m_AnimationRotate = AnimationRotate;
 				m_RotateCenter = RotateCenter;
 				pTargetChar->m_AnimationStartTick = AnimationStartTick;
 				pTargetChar->m_AnimationLengthTick = AnimationLength;
+				pTargetChar->m_AnimationStartAngle = AnimationStartAngle;
 				pTargetChar->m_AnimationRotate = AnimationRotate;
 				pTargetChar->m_RotateCenter = RotateCenter;
 
