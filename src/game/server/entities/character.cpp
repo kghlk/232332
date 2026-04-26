@@ -824,11 +824,14 @@ void CCharacter::Start()
 
 		m_Pos = FirstOutPos;
 		m_Core.m_Pos = m_Pos;
-
+		m_pPlayer->m_RoundStartTick = Server()->Tick();
 		m_IsStart = true;
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
 		if(pTargetChar)
-		pTargetChar->m_IsStart = true;
+		{
+			pTargetChar->m_pPlayer->m_RoundStartTick = Server()->Tick();
+			pTargetChar->m_IsStart = true;
+		}
 	}
 }
 
