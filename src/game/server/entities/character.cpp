@@ -46,6 +46,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_Partner = -1;
 	m_DuiyouStartTick = -1;
 	m_AutoBot = false;
+	m_Texiao = true;
 
 	m_PlayingAnimation = false;
 	m_AnimationStartTick = 0;
@@ -902,17 +903,31 @@ void CCharacter::Tick()
 
 	if(m_Partner >= 0 && m_Partner != m_pPlayer->GetCid() && m_IsStart)
 	{
-		if(Server()->Tick() % 4 == 0 && m_Texiao)
-			GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid());
 		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
 		if(pTargetChar)
 		{
-			if(Server()->Tick() % 4 == 0 && m_Texiao)
-				GameServer()->CreateDeath(pTargetChar->m_Pos, pTargetChar->m_pPlayer->GetCid());
 			pTargetChar->HavePartner = true;
 
 			double TickSpeed = (double)Server()->TickSpeed();
 			const double PI_PRECISION = 3.14159265358979323846;
+
+			vec2 Diff = m_Pos - m_RotateCenter;
+			double Distance = length(Diff);
+			double RealAngle = atan2(Diff.y, Diff.x);
+			vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
+			vec2 FakePos = m_RotateCenter + PosOffset;
+
+			if(Server()->Tick() % 4 == 0 && m_Texiao)
+				GameServer()->CreateDeath(FakePos, m_pPlayer->GetCid());
+
+			vec2 DiffPartner = pTargetChar->m_Pos - m_RotateCenter;
+			double DistancePartner = length(DiffPartner);
+			double RealAnglePartner = atan2(DiffPartner.y, DiffPartner.x);
+			vec2 PosOffsetPartner = vec2(DistancePartner * cos(RealAnglePartner + pTargetChar->m_CurrentAngle), DistancePartner * sin(RealAnglePartner + pTargetChar->m_CurrentAngle));
+			vec2 FakePosPartner = pTargetChar->m_RotateCenter + PosOffsetPartner;
+
+			if(Server()->Tick() % 4 == 0 && m_Texiao)
+				GameServer()->CreateDeath(FakePosPartner, pTargetChar->m_pPlayer->GetCid());
 
 			// --- 1. 获取位置和地砖 ---
 			vec2 CurrentRotatingPos = (m_RotateMode == 0) ? pTargetChar->m_Pos : m_Pos;
@@ -1095,12 +1110,7 @@ void CCharacter::Tick()
 				if(m_UsedTiles.size() > 10)
 					m_UsedTiles.erase(m_UsedTiles.begin());
 
-				vec2 Diff = m_Pos - m_RotateCenter;
-				double Distance = length(Diff);
-				double RealAngle = atan2(Diff.y, Diff.x);
-				vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
-				vec2 FakePos = m_RotateCenter + PosOffset;
-				GameServer()->CreateSound(FakePos, SOUND_HAMMER_HIT, TeamMask());
+				GameServer()->CreateSound((FakePos + FakePosPartner) / 2, SOUND_HAMMER_HIT, TeamMask());
 			}
 
 			// --- 5. 应用渲染与死亡检测 ---
@@ -1108,7 +1118,7 @@ void CCharacter::Tick()
 
 			if(!m_FirstSwitch)
 			{
-				if(RelativeTick > 0 && (RelativeTick * m_CurrentSpeed) > 2.1 * PI_PRECISION) 
+				if(RelativeTick > 0 && (RelativeTick * m_CurrentSpeed) > 2.1 * PI_PRECISION)
 				{
 					Die(m_pPlayer->GetCid(), WEAPON_WORLD);
 					CCharacter *pPartner = GameServer()->GetPlayerChar(m_Partner);
