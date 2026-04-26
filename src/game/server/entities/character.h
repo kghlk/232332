@@ -57,6 +57,7 @@ public:
 	double m_AnimationStartAngle;
 	double m_AnimationRotate;
 	double m_CurrentAngle;
+	vec2 m_SnapViewPos;
 
 	void Start();
 	void SwitchAutoBot();
