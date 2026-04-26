@@ -859,7 +859,7 @@ void CCharacter::Tick()
 	{
 		Antibot()->OnHookAttach(m_pPlayer->GetCid(), false);
 	}
-	
+
 	// --- 0. 队友逻辑初始化 ---
 	if(m_Core.HookedPlayer() >= 0 && !HavePartner && !GameServer()->GetPlayerChar(m_Core.HookedPlayer())->HavePartner)
 			m_Partner = m_Core.HookedPlayer();
@@ -914,6 +914,29 @@ void CCharacter::Tick()
 
 			vec2 box = vec2(96.0f, 96.0f);
 			vec2 TargetTilePos;
+
+			// 炒鸡雾滴啤梨动画
+			int QuadAnimationZoneHandle = Collision()->GetZoneHandle("ani");
+			CQuad AniQuad = Collision()->GetZoneValueRectPos(QuadAnimationZoneHandle, CurrentRotatingPos, vec2(16.0, 16.0), 0);
+			if(Collision()->TestBoxSize(CurrentRotatingPos, vec2(16.0, 16.0)))
+			{
+				int AnimationStartTick = Server()->Tick();
+				int AnimationLength = AniQuad.m_ColorEnvOffset;
+				int AnimationRotate = AniQuad.m_PosEnvOffset * pi/180;
+				vec2 RotateCenter = vec2(fx2f(AniQuad.m_aPoints[4].x), fx2f(AniQuad.m_aPoints[4].y));
+
+				m_AnimationStartTick = AnimationStartTick;
+				m_AnimationLengthTick = AnimationLength;
+				m_AnimationRotate = AnimationRotate;
+				m_RotateCenter = RotateCenter;
+				pTargetChar->m_AnimationStartTick = AnimationStartTick;
+				pTargetChar->m_AnimationLengthTick = AnimationLength;
+				pTargetChar->m_AnimationRotate = AnimationRotate;
+				pTargetChar->m_RotateCenter = RotateCenter;
+
+				m_PlayingAnimation = true;
+				pTargetChar->m_PlayingAnimation = true;
+			}
 
 			int QuadTileZoneHandle = Collision()->GetZoneHandle("tile");
 			CQuad Quad = Collision()->GetZoneValueRectPos(QuadTileZoneHandle, CurrentRotatingPos, box, 0);
