@@ -948,6 +948,7 @@ void CCharacter::Tick()
 			vec2 box = vec2(96.0f, 96.0f);
 			vec2 TargetTilePos;
 
+
 			// 炒鸡雾滴啤梨动画	
 			int Time = (int64_t)100 * ((float)(Server()->Tick() - m_StartTime) / ((float)Server()->TickSpeed()));
 			int QuadAnimationZoneHandle = Collision()->GetZoneHandle("ani");
@@ -955,19 +956,18 @@ void CCharacter::Tick()
 		
 			if(Time == g_Config.m_AdofaiAniStartTime)	
 			{
-				GameServer()->SendBroadcast("yes", m_pPlayer->GetCid());
 				m_AnimationStartTick = Server()->Tick()-2;
 				pTargetChar->m_AnimationStartTick = Server()->Tick() - 2;
 				m_PlayingAnimation = true;
 				pTargetChar->m_PlayingAnimation = true;
 			}
-			if(AniQuad.m_ColorEnvOffset > 0)
+
+			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation && !m_FirstSwitch)
 			{
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
 				double AnimationStartAngle = m_CurrentAngle;
 				double AnimationRotate = (double)AniQuad.m_PosEnvOffset * pi/180;
 				vec2 RotateCenter = vec2(fx2f(AniQuad.m_aPoints[4].x), fx2f(AniQuad.m_aPoints[4].y));
-			
 				m_AnimationLengthTick = AnimationLength;
 				m_AnimationStartAngle = AnimationStartAngle;
 				m_AnimationRotate = AnimationRotate;
@@ -1451,6 +1451,8 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 	if(m_IsStart)
 	{
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
+
 		vec2 Diff = pCore->m_Pos - m_RotateCenter;
 		double Distance = length(Diff);
 		double RealAngle = atan2(Diff.y, Diff.x);
@@ -1468,10 +1470,6 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 			if(AnimationProg >= 1.0)
 			{
-				int Time = (int64_t)100 * ((float)(Server()->Tick() - m_StartTime) / ((float)Server()->TickSpeed()));
-				char aBroadcast[128];
-				str_format(aBroadcast, sizeof(aBroadcast), "%d", Time);
-				GameServer()->SendBroadcast(aBroadcast, m_pPlayer->GetCid());
 				m_PlayingAnimation = false;
 				m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate;
 			}
