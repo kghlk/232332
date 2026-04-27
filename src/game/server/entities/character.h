@@ -49,6 +49,7 @@ public:
 	bool m_IsStart;
 	bool m_AutoBot;
 	bool m_Texiao;
+	bool m_AdofaiDebug;
 
 	bool m_PlayingAnimation;
 	int m_AnimationStartTick;
@@ -62,6 +63,7 @@ public:
 	void Start();
 	void SwitchAutoBot();
 	void SwitchTexiao();
+	void SwitchDebug();
 	std::vector<int> m_UsedTiles;
 
 	void Reset() override;

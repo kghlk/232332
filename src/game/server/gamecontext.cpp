@@ -4060,6 +4060,7 @@ void CGameContext::RegisterChatCommands()
 	Console()->Register("start", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConStart, this, "start");
 	Console()->Register("autobot", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConAutoBot, this, "autobot");
 	Console()->Register("texiao", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConTexiao, this, "texiao");
+	Console()->Register("debug", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConDebug, this, "debug");
 
 
 	Console()->Register("credits", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConCredits, this, "Shows the credits of the DDNet mod");

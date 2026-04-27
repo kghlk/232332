@@ -47,6 +47,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_DuiyouStartTick = -1;
 	m_AutoBot = false;
 	m_Texiao = true;
+	m_AdofaiDebug = false;
 
 	m_PlayingAnimation = false;
 	m_AnimationStartTick = 0;
@@ -841,10 +842,17 @@ void CCharacter::SwitchAutoBot()
 	m_AutoBot = !m_AutoBot;
 	GameServer()->SendChatTarget(m_pPlayer->GetCid(), m_AutoBot ? "自动点击开启" : "自动点击关闭");
 }
+
 void CCharacter::SwitchTexiao()
 {
 	m_Texiao = !m_Texiao;
 	GameServer()->SendChatTarget(m_pPlayer->GetCid(), m_Texiao ? "粒子特效开启" : "粒子特效关闭");
+}
+
+void CCharacter::SwitchDebug()
+{
+	m_AdofaiDebug = !m_AdofaiDebug;
+	GameServer()->SendChatTarget(m_pPlayer->GetCid(), m_AdofaiDebug ? "调试开启" : "调试关闭");
 }
 
 void CCharacter::Tick()
@@ -945,7 +953,12 @@ void CCharacter::Tick()
 			CQuad AniQuad = Collision()->GetZoneValueRectPos(QuadAnimationZoneHandle, CurrentRotatingPos, vec2(16.0, 16.0), 0);
 			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation)
 			{
-				int AnimationStartTick = Server()->Tick() + (30.0 * TickSpeed) / m_LastBPM;
+				if(m_AdofaiDebug)
+				{
+					GameServer()->SendChatTarget(m_pPlayer->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
+					GameServer()->SendChatTarget(pTargetChar->GetPlayer()->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
+				}
+				int AnimationStartTick = Server()->Tick(); // + (30.0 * TickSpeed) / m_LastBPM;
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
 				double AnimationStartAngle = m_CurrentAngle;
 				double AnimationRotate = (double)AniQuad.m_PosEnvOffset * pi/180;
