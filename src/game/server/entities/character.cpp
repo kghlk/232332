@@ -958,7 +958,8 @@ void CCharacter::Tick()
 					GameServer()->SendChatTarget(m_pPlayer->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
 					GameServer()->SendChatTarget(pTargetChar->GetPlayer()->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
 				}
-				int AnimationStartTick = Server()->Tick(); // + (30.0 * TickSpeed) / m_LastBPM;
+				int AnimationStartTick = m_pPlayer->m_RoundStartTick + GameServer()->Config()->m_AdofaiAniStartTick;
+				// int AnimationStartTick = Server()->Tick() + (30.0 * TickSpeed) / m_LastBPM;
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
 				double AnimationStartAngle = m_CurrentAngle;
 				double AnimationRotate = (double)AniQuad.m_PosEnvOffset * pi/180;
@@ -1050,9 +1051,9 @@ void CCharacter::Tick()
 			{
 				if(m_FirstSwitch)
 				{
-				    m_DDRaceState = ERaceState::STARTED;
+					m_DDRaceState = ERaceState::STARTED;
 					m_StartTime = Server()->Tick();
-				    pTargetChar->m_DDRaceState = ERaceState::STARTED;
+					pTargetChar->m_DDRaceState = ERaceState::STARTED;
 					pTargetChar->m_StartTime = Server()->Tick();
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
 					GameServer()->CreateMapSound(0, m_Partner);
@@ -1447,8 +1448,8 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		pCore = &m_SendCore;
 	}
 
-	int FakeX = pCore->m_Vel.x;
-	int FakeY = pCore->m_Vel.y;
+	int FakeX = pCore->m_Pos.x;
+	int FakeY = pCore->m_Pos.y;
 
 	if(m_IsStart)
 	{
