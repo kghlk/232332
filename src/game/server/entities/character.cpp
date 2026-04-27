@@ -1447,31 +1447,37 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		pCore = &m_SendCore;
 	}
 
-	vec2 Diff = pCore->m_Pos - m_RotateCenter;
-	double Distance = length(Diff);
-	double RealAngle = atan2(Diff.y, Diff.x);
-	vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
-	int FakeX = m_RotateCenter.x + PosOffset.x;
-	int FakeY = m_RotateCenter.y + PosOffset.y;
+	int FakeX = pCore->m_Vel.x;
+	int FakeY = pCore->m_Vel.y;
 
-	m_SendCore.m_Pos = vec2(FakeX, FakeY);
-
-	if(m_PlayingAnimation)
+	if(m_IsStart)
 	{
-		int CurrentTick = Server()->Tick();
-		int ProgTick = CurrentTick - m_AnimationStartTick;
-		double AnimationProg = (double)ProgTick / m_AnimationLengthTick;
+		vec2 Diff = pCore->m_Pos - m_RotateCenter;
+		double Distance = length(Diff);
+		double RealAngle = atan2(Diff.y, Diff.x);
+		vec2 PosOffset = vec2(Distance * cos(RealAngle + m_CurrentAngle), Distance * sin(RealAngle + m_CurrentAngle));
+		FakeX = m_RotateCenter.x + PosOffset.x;
+		FakeY = m_RotateCenter.y + PosOffset.y;
 
-		if(AnimationProg >= 1.0)
+		m_SendCore.m_Pos = vec2(FakeX, FakeY);
+
+		if(m_PlayingAnimation)
 		{
-			m_PlayingAnimation = false;
-			m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate;
-		}
-		else if(AnimationProg >= 0.0)
-		{
-			// double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
-			double easedProg = AnimationProg;
-			m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate * easedProg;
+			int CurrentTick = Server()->Tick();
+			int ProgTick = CurrentTick - m_AnimationStartTick;
+			double AnimationProg = (double)ProgTick / m_AnimationLengthTick;
+
+			if(AnimationProg >= 1.0)
+			{
+				m_PlayingAnimation = false;
+				m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate;
+			}
+			else if(AnimationProg >= 0.0)
+			{
+				// double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
+				double easedProg = AnimationProg;
+				m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate * easedProg;
+			}
 		}
 	}
 
