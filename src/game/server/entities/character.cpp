@@ -1050,6 +1050,10 @@ void CCharacter::Tick()
 			{
 				if(m_FirstSwitch)
 				{
+				    m_DDRaceState = ERaceState::STARTED;
+					m_StartTime = Server()->Tick();
+				    pTargetChar->m_DDRaceState = ERaceState::STARTED;
+					pTargetChar->m_StartTime = Server()->Tick();
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
 					GameServer()->CreateMapSound(0, m_Partner);
 
