@@ -948,16 +948,17 @@ void CCharacter::Tick()
 			vec2 box = vec2(96.0f, 96.0f);
 			vec2 TargetTilePos;
 
+			if(m_AdofaiDebug)
+			{
+				GameServer()->SendChatTarget(m_pPlayer->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
+				GameServer()->SendChatTarget(pTargetChar->GetPlayer()->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
+			}
+
 			// 炒鸡雾滴啤梨动画
 			int QuadAnimationZoneHandle = Collision()->GetZoneHandle("ani");
 			CQuad AniQuad = Collision()->GetZoneValueRectPos(QuadAnimationZoneHandle, CurrentRotatingPos, vec2(16.0, 16.0), 0);
-			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation)
+			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation && !m_FirstSwitch)
 			{
-				if(m_AdofaiDebug)
-				{
-					GameServer()->SendChatTarget(m_pPlayer->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
-					GameServer()->SendChatTarget(pTargetChar->GetPlayer()->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
-				}
 				int AnimationStartTick = m_pPlayer->m_RoundStartTick + GameServer()->Config()->m_AdofaiAniStartTick;
 				// int AnimationStartTick = Server()->Tick() + (30.0 * TickSpeed) / m_LastBPM;
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
@@ -1453,6 +1454,8 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 	if(m_IsStart)
 	{
+		CCharacter *pTargetChar = GameServer()->GetPlayerChar(m_Partner);
+
 		vec2 Diff = pCore->m_Pos - m_RotateCenter;
 		double Distance = length(Diff);
 		double RealAngle = atan2(Diff.y, Diff.x);
@@ -1475,6 +1478,11 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 			}
 			else if(AnimationProg >= 0.0)
 			{
+				if(m_AdofaiDebug)
+				{
+					GameServer()->SendChatTarget(m_pPlayer->GetCid(), ("ani: " + std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0)).c_str());
+					GameServer()->SendChatTarget(pTargetChar->GetPlayer()->GetCid(), ("ani: " + std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0)).c_str());
+				}
 				// double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
 				double easedProg = AnimationProg;
 				m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate * easedProg;
