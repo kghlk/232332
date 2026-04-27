@@ -917,7 +917,7 @@ void CCharacter::Tick()
 			pTargetChar->HavePartner = true;
 
 			double TickSpeed = (double)Server()->TickSpeed();
-			const double PI_PRECISION = 3.14159265358979323846;
+			const double PI_PRECISION = pi;
 
 			vec2 Diff = m_Pos - m_RotateCenter;
 			double Distance = length(Diff);
@@ -1057,8 +1057,8 @@ void CCharacter::Tick()
 					GameServer()->CreateMapSound(0, m_Partner);
 
 					m_pPlayer->m_RoundStartTick = Server()->Tick()-2;
-					GameServer()->GetPlayerChar(m_Partner)->m_pPlayer->m_RoundStartTick = Server()->Tick();
-					m_DuiyouStartTick = (double)Server()->Tick() - 2;
+					GameServer()->GetPlayerChar(m_Partner)->m_pPlayer->m_RoundStartTick = Server()->Tick() - 2;
+					m_DuiyouStartTick = (double)Server()->Tick();
 					m_AngleOffset = TargetPhysicalAngle + PI_PRECISION;
 					m_FirstSwitch = false;
 				}
