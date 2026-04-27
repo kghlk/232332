@@ -962,7 +962,7 @@ void CCharacter::Tick()
 				pTargetChar->m_PlayingAnimation = true;
 			}
 
-			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation && !m_FirstSwitch)
+			if(AniQuad.m_ColorEnvOffset > 0)
 			{
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
 				double AnimationStartAngle = m_CurrentAngle;
