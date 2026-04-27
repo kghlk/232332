@@ -46,7 +46,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_Partner = -1;
 	m_DuiyouStartTick = -1;
 	m_AutoBot = false;
-	m_Texiao = true;
+	m_Texiao = false;
 	m_AdofaiDebug = false;
 
 	m_PlayingAnimation = false;
@@ -948,36 +948,34 @@ void CCharacter::Tick()
 			vec2 box = vec2(96.0f, 96.0f);
 			vec2 TargetTilePos;
 
-			// 炒鸡雾滴啤梨动画
+			// 炒鸡雾滴啤梨动画	
+			int Time = (int64_t)100 * ((float)(Server()->Tick() - m_StartTime) / ((float)Server()->TickSpeed()));
 			int QuadAnimationZoneHandle = Collision()->GetZoneHandle("ani");
 			CQuad AniQuad = Collision()->GetZoneValueRectPos(QuadAnimationZoneHandle, CurrentRotatingPos, vec2(16.0, 16.0), 0);
-			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation)
+		
+			if(Time == g_Config.m_AdofaiAniStartTime)	
 			{
-				if(m_AdofaiDebug)
-				{
-					GameServer()->SendChatTarget(m_pPlayer->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
-					GameServer()->SendChatTarget(pTargetChar->GetPlayer()->GetCid(), std::to_string((double)(Server()->Tick() - m_pPlayer->m_RoundStartTick) / 50.0).c_str());
-				}
-				int AnimationStartTick = m_pPlayer->m_RoundStartTick + GameServer()->Config()->m_AdofaiAniStartTick;
-				// int AnimationStartTick = Server()->Tick() + (30.0 * TickSpeed) / m_LastBPM;
+				GameServer()->SendBroadcast("yes", m_pPlayer->GetCid());
+				m_AnimationStartTick = Server()->Tick()-2;
+				pTargetChar->m_AnimationStartTick = Server()->Tick() - 2;
+				m_PlayingAnimation = true;
+				pTargetChar->m_PlayingAnimation = true;
+			}
+			if(AniQuad.m_ColorEnvOffset > 0)
+			{
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
 				double AnimationStartAngle = m_CurrentAngle;
 				double AnimationRotate = (double)AniQuad.m_PosEnvOffset * pi/180;
 				vec2 RotateCenter = vec2(fx2f(AniQuad.m_aPoints[4].x), fx2f(AniQuad.m_aPoints[4].y));
-
-				m_AnimationStartTick = AnimationStartTick;
+			
 				m_AnimationLengthTick = AnimationLength;
 				m_AnimationStartAngle = AnimationStartAngle;
 				m_AnimationRotate = AnimationRotate;
 				m_RotateCenter = RotateCenter;
-				pTargetChar->m_AnimationStartTick = AnimationStartTick;
 				pTargetChar->m_AnimationLengthTick = AnimationLength;
 				pTargetChar->m_AnimationStartAngle = AnimationStartAngle;
 				pTargetChar->m_AnimationRotate = AnimationRotate;
 				pTargetChar->m_RotateCenter = RotateCenter;
-
-				m_PlayingAnimation = true;
-				pTargetChar->m_PlayingAnimation = true;
 			}
 
 			int QuadTileZoneHandle = Collision()->GetZoneHandle("tile");
@@ -1052,15 +1050,15 @@ void CCharacter::Tick()
 				if(m_FirstSwitch)
 				{
 					m_DDRaceState = ERaceState::STARTED;
-					m_StartTime = Server()->Tick();
+					m_StartTime = Server()->Tick() -2;
 					pTargetChar->m_DDRaceState = ERaceState::STARTED;
-					pTargetChar->m_StartTime = Server()->Tick();
+					pTargetChar->m_StartTime = Server()->Tick() - 2;
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
 					GameServer()->CreateMapSound(0, m_Partner);
 
-					m_pPlayer->m_RoundStartTick = Server()->Tick();
+					m_pPlayer->m_RoundStartTick = Server()->Tick()-2;
 					GameServer()->GetPlayerChar(m_Partner)->m_pPlayer->m_RoundStartTick = Server()->Tick();
-					m_DuiyouStartTick = (double)Server()->Tick();
+					m_DuiyouStartTick = (double)Server()->Tick() - 2;
 					m_AngleOffset = TargetPhysicalAngle + PI_PRECISION;
 					m_FirstSwitch = false;
 				}
@@ -1470,6 +1468,10 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 			if(AnimationProg >= 1.0)
 			{
+				int Time = (int64_t)100 * ((float)(Server()->Tick() - m_StartTime) / ((float)Server()->TickSpeed()));
+				char aBroadcast[128];
+				str_format(aBroadcast, sizeof(aBroadcast), "%d", Time);
+				GameServer()->SendBroadcast(aBroadcast, m_pPlayer->GetCid());
 				m_PlayingAnimation = false;
 				m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate;
 			}
