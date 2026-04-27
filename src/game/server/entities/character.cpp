@@ -945,8 +945,7 @@ void CCharacter::Tick()
 			CQuad AniQuad = Collision()->GetZoneValueRectPos(QuadAnimationZoneHandle, CurrentRotatingPos, vec2(16.0, 16.0), 0);
 			if(AniQuad.m_ColorEnvOffset > 0 && !m_PlayingAnimation)
 			{
-				GameServer()->SendBroadcast("animation", -1);
-				int AnimationStartTick = Server()->Tick() - round_to_int((m_LastBPM * PI_PRECISION) / (60.0 * TickSpeed) * 16);
+				int AnimationStartTick = Server()->Tick() + (30.0 * TickSpeed) / m_LastBPM;
 				int AnimationLength = AniQuad.m_ColorEnvOffset;
 				double AnimationStartAngle = m_CurrentAngle;
 				double AnimationRotate = (double)AniQuad.m_PosEnvOffset * pi/180;
@@ -1455,7 +1454,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 			m_PlayingAnimation = false;
 			m_CurrentAngle = m_AnimationStartAngle + m_AnimationRotate;
 		}
-		else
+		else if(AnimationProg >= 0.0)
 		{
 			// double easedProg = -(cos(pi * AnimationProg) - 1) / 2;
 			double easedProg = AnimationProg;
