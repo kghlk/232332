@@ -46,7 +46,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_Partner = -1;
 	m_DuiyouStartTick = -1;
 	m_AutoBot = false;
-	m_Texiao = true;
+	m_Texiao = false;
 
 	m_PlayingAnimation = false;
 	m_AnimationStartTick = 0;
@@ -1038,6 +1038,10 @@ void CCharacter::Tick()
 			{
 				if(m_FirstSwitch)
 				{
+				    m_DDRaceState = ERaceState::STARTED;
+					m_StartTime = Server()->Tick();
+				    pTargetChar->m_DDRaceState = ERaceState::STARTED;
+					pTargetChar->m_StartTime = Server()->Tick();
 					GameServer()->CreateMapSound(0, m_pPlayer->GetCid());
 					GameServer()->CreateMapSound(0, m_Partner);
 
